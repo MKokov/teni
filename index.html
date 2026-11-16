@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Тени — прототип</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: one phone-sized app column; on wide screens it sits centered as a device. Single deliberate night look. */
+:root{
+  --void:#120F22;
+  --night:#1B1830;
+  --panel:#27223F;
+  --panel-2:#332C52;
+  --line:#41396A;
+  --ink:#F4EEFF;
+  --muted:#BDB4DB;
+  --lamp:#FFC65C;
+  --lamp-soft:#FFE0A3;
+  --lamp-ink:#2A1F0E;
+  --peach:#FFB38A;
+  --mint:#8EE3C1;
+  --lilac:#B9A4FF;
+  --danger:#F07A8E;
+  --warn:#FFA877;
+  --display:'Fredoka','Nunito',system-ui,sans-serif;
+  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+html{height:100%;box-sizing:border-box;background:var(--void)}
+*,*::before,*::after{box-sizing:inherit}
+body{height:100%;margin:0;background:var(--void);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.4}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance}
+p{margin:0}
+
+.app{position:relative;height:100%;max-width:440px;margin:0 auto;background:var(--night);display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:640px){
+  body{display:flex;align-items:center;justify-content:center;padding-block:16px}
+  .app{width:400px;height:min(100%,860px);border-radius:36px;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.55)}
+}
+#view{display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* Header */
+.top{padding:18px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.eyebrow{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:.3px}
+.top h1{font-size:26px;color:#fff;line-height:1.15}
+.top-right{display:flex;align-items:center;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);padding:7px 12px;border-radius:999px;font-weight:800;font-size:15px;color:var(--lamp-soft);font-variant-numeric:tabular-nums}
+.icon-btn{width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.lvl{padding:0 16px 10px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800;color:var(--muted)}
+.lvl .bar{flex:1}
+.bar{height:10px;border-radius:999px;background:var(--panel-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:999px;background:var(--lamp);transition:width .5s ease}
+
+/* Screen */
+.screen{flex:1;min-height:0;overflow-y:auto;padding:4px 16px 24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+.screen>*{flex-shrink:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.card-head h2{font-size:18px;color:#fff}
+.label{font-size:12px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--lamp)}
+.muted{color:var(--muted);font-size:14px;font-weight:600}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.section-title h2{font-size:20px;color:#fff}
+
+/* Weather */
+.weather{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.wbtn{border:2px solid transparent;background:var(--panel-2);border-radius:16px;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:800;color:var(--muted);padding:6px 2px}
+.wbtn[aria-pressed="true"]{border-color:var(--lamp);background:#463D72;color:var(--lamp-soft)}
+.mood{font-size:14px;font-weight:700;color:var(--ink);background:var(--panel-2);border-radius:14px;padding:10px 12px}
+
+/* Garden */
+.garden{position:relative;border-radius:26px;overflow:hidden;border:1px solid var(--line);background:var(--panel-2)}
+.garden svg{display:block;width:100%;height:auto}
+.gchip{position:absolute;background:rgba(27,24,48,.88);border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;color:var(--ink)}
+.gchip.tl{left:12px;top:12px}
+.gchip.br{right:12px;bottom:12px}
+
+/* Rows */
+.row{display:flex;align-items:center;gap:12px}
+.row .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.row .name{font-weight:800;font-size:16px}
+.mini{width:58px;height:62px;flex-shrink:0}
+.strength{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.strength .bar{flex:1;height:8px}
+
+.btn{min-height:44px;padding:0 16px;border-radius:14px;border:none;background:var(--lamp);color:var(--lamp-ink);font-weight:800;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn.ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--line)}
+.btn.big{min-height:54px;font-family:var(--display);font-weight:600;font-size:18px;border-radius:18px;width:100%}
+.btn[disabled]{opacity:.5;cursor:default}
+
+.task-card{background:var(--lamp);color:var(--lamp-ink);border-radius:24px;padding:16px;display:flex;align-items:center;gap:14px}
+.task-card .label{color:#6B4508}
+.task-card .t{font-weight:800;font-size:16px;line-height:1.3}
+.task-card .btn{background:var(--lamp-ink);color:var(--lamp-soft)}
+.badge{width:46px;height:46px;border-radius:16px;background:var(--lamp-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Tasks list */
+.task{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:12px 14px;width:100%;text-align:left}
+.task .check{width:40px;height:40px;border-radius:999px;border:2px solid var(--lamp);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+.task.done .check{background:var(--lamp)}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.task .tt{font-weight:800;font-size:15px}
+.task .rw{font-size:12px;font-weight:700;color:var(--muted)}
+
+/* Shadows grid */
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.scard{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.scard svg{width:96px;height:104px}
+.scard .name{font-weight:800;font-size:15px;line-height:1.25}
+.scard .strength{width:100%}
+.scard .btn{width:100%}
+.tag{font-size:12px;font-weight:800;padding:4px 10px;border-radius:999px;background:#264A40;color:var(--mint)}
+.add{border:2px dashed var(--line);background:transparent;border-radius:22px;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-weight:800}
+
+/* Journal */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:800;color:var(--muted)}
+.field input{height:50px;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);padding:0 14px;font-size:16px;font-weight:700}
+.field input::placeholder{color:#8C83AE}
+.err{color:var(--danger);font-size:14px;font-weight:700;min-height:1px}
+.entry{display:flex;flex-direction:column;gap:6px;padding:12px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:none;padding-top:0}
+.entry ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:2px;font-weight:700}
+.lit{display:flex;align-items:center;gap:10px;font-weight:800}
+.dot{width:12px;height:12px;border-radius:999px;background:var(--lamp);box-shadow:0 0 12px var(--lamp);flex-shrink:0}
+
+/* Nav */
+.nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:8px 12px 10px;background:#221E3B;border-top:1px solid var(--line)}
+.nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;min-height:52px;font-size:12px;font-weight:800;color:var(--muted);border-radius:14px}
+.nav button[aria-current="page"]{color:var(--lamp)}
+
+/* Overlays */
+.overlay{position:absolute;inset:0;z-index:20;background:#16132A;display:flex;flex-direction:column;overflow-y:auto}
+.enc-top{padding:16px 16px 6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.enc-top p{font-family:var(--display);font-weight:600;font-size:19px}
+.pill{background:var(--panel);padding:7px 12px;border-radius:999px;font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap}
+.enc-scene{position:relative}
+.enc-scene svg{display:block;width:100%;height:auto}
+.bubble{position:absolute;left:16px;top:12px;max-width:62%;background:var(--ink);color:#2A2440;border-radius:20px 20px 20px 6px;padding:11px 14px;font-weight:800;font-size:15px;line-height:1.35;animation:pop .35s ease}
+.enc-meter{padding:0 18px;display:flex;flex-direction:column;gap:6px}
+.enc-meter .bar{height:12px}
+.enc-card{margin:14px 16px 20px;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.enc-card h2{font-size:19px;color:#fff}
+.opt{text-align:left;min-height:50px;padding:12px 14px;border-radius:16px;border:2px solid transparent;background:var(--panel-2);font-weight:700;font-size:15px;line-height:1.35}
+.opt:hover{border-color:var(--lamp)}
+.own{display:flex;gap:8px}
+.own input{flex:1;min-width:0;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--night);padding:0 12px;font-size:15px;font-weight:700}
+.own input::placeholder{color:#8C83AE}
+.delta{display:flex;flex-wrap:wrap;gap:8px}
+.delta span{font-size:13px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--panel-2)}
+.hint{font-size:14px;font-weight:700;color:var(--lamp-soft);background:#3C3354;border-radius:14px;padding:10px 12px}
+
+.sheet-wrap{position:absolute;inset:0;z-index:30;background:rgba(10,8,20,.6);display:flex;align-items:flex-end}
+.sheet{width:100%;background:var(--panel);border-radius:28px 28px 0 0;border-top:1px solid var(--line);padding:20px 16px 24px;display:flex;flex-direction:column;gap:14px;animation:up .25s ease}
+.sheet h2{font-size:21px;color:#fff}
+.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.look{border:2px solid transparent;background:var(--panel-2);border-radius:18px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;font-weight:800;color:var(--muted)}
+.look svg{width:56px;height:60px}
+.look[aria-pressed="true"]{border-color:var(--lamp);color:var(--lamp-soft)}
+
+.tame{position:absolute;inset:0;z-index:40;background:radial-gradient(circle at 50% 38%,#3A3170 0%,#16132A 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 20px;text-align:center}
+.stage{position:relative;width:220px;height:230px}
+.stage svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.t-shadow{animation:vanish 1.4s ease forwards;transform-origin:50% 60%}
+.t-pet{opacity:0;animation:pop .7s 1.15s ease forwards;transform-origin:50% 70%}
+.t-spark{opacity:0;animation:twinkle 1.6s 1.2s ease infinite}
+.tame h2{font-size:30px;color:var(--lamp)}
+.tame p{max-width:300px;font-weight:700;color:var(--ink)}
+.tame .reward{color:var(--lamp-soft);font-weight:800}
+
+.toast{position:absolute;left:50%;top:14px;z-index:50;transform:translate(-50%,-140%);background:var(--lamp);color:var(--lamp-ink);font-weight:800;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .3s ease;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.toast.show{transform:translate(-50%,0)}
+
+.bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
+.bob.d2{animation-delay:-1.1s}.bob.d3{animation-delay:-2.2s}
+.lurk{animation:lurk 4s ease-in-out infinite;transform-box:fill-box}
+.hit{animation:hit .55s ease;transform-box:fill-box;transform-origin:center}
+.flicker{animation:flicker 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+
+.twinkle{animation:twinkle 3.2s ease-in-out infinite}
+.pulse{animation:pulse 5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.drift{animation:drift 24s ease-in-out infinite alternate}
+.drift.slow{animation-duration:36s;animation-delay:-9s}
+.sway{animation:sway 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.flower{animation:sway 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.breathe{animation:breathe 4s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.fog{animation:fog 13s ease-in-out infinite alternate}
+.drop{animation:drop .9s linear infinite}
+.flash{opacity:0;animation:flash 7s linear infinite}
+.fly{animation:fly 6s ease-in-out infinite}
+.butterfly{animation:flutter 18s linear infinite}
+.wing{animation:flap .22s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 50%}
+@keyframes bob{0%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}60%{transform:translateY(0)}72%{transform:translateY(-13px)}80%{transform:translateY(0)}86%{transform:translateY(-3px)}}
+@keyframes pulse{50%{transform:scale(1.12);opacity:.75}}
+@keyframes drift{from{transform:translateX(-20px)}to{transform:translateX(24px)}}
+@keyframes sway{0%,100%{transform:rotate(-2.2deg)}50%{transform:rotate(2.2deg)}}
+@keyframes breathe{50%{transform:scale(1.015,1.035)}}
+@keyframes fog{from{transform:translateX(-26px)}to{transform:translateX(26px)}}
+@keyframes drop{0%{transform:translate(0,-26px);opacity:0}15%{opacity:1}100%{transform:translate(-9px,48px);opacity:0}}
+@keyframes flash{0%,86%,90%,94%,100%{opacity:0}87%,92%{opacity:1}}
+@keyframes fly{0%,100%{transform:translate(0,0);opacity:.15}25%{transform:translate(9px,-11px);opacity:1}50%{transform:translate(-4px,-20px);opacity:.45}75%{transform:translate(-11px,-7px);opacity:1}}
+@keyframes flutter{0%{transform:translate(-30px,150px)}20%{transform:translate(70px,110px)}40%{transform:translate(150px,150px)}60%{transform:translate(230px,105px)}80%{transform:translate(310px,140px)}100%{transform:translate(400px,110px)}}
+@keyframes flap{from{transform:scaleX(1)}to{transform:scaleX(.25)}}
+@keyframes lurk{50%{transform:translateX(4px);opacity:.7}}
+@keyframes hit{20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(7px) rotate(2deg)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
+@keyframes flicker{50%{opacity:.75;transform:scale(1.06)}}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes vanish{0%{transform:scale(1)}30%{transform:scale(1.08) rotate(-4deg)}100%{transform:scale(.05) rotate(20deg);opacity:0}}
+@keyframes twinkle{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .t-shadow{opacity:0}.t-pet,.t-spark{opacity:1}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gFired" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7A7499"/><stop offset="1" stop-color="#3B3757"/></linearGradient>
+    <linearGradient id="gMoney" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6F7FA0"/><stop offset="1" stop-color="#363F5C"/></linearGradient>
+    <linearGradient id="gHost" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#957BD0"/><stop offset="1" stop-color="#4A3B80"/></linearGradient>
+    <linearGradient id="pPeach" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFD0B0"/><stop offset="1" stop-color="#FF9F6B"/></linearGradient>
+    <linearGradient id="pMint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C2F5E0"/><stop offset="1" stop-color="#6FCFA8"/></linearGradient>
+    <linearGradient id="pLilac" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#DCD0FF"/><stop offset="1" stop-color="#9A82F0"/></linearGradient>
+    <linearGradient id="gCloak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B8BD6"/><stop offset="1" stop-color="#3A5F9E"/></linearGradient>
+    <radialGradient id="gLamp" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFC65C" stop-opacity=".85"/><stop offset="1" stop-color="#FFC65C" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gEnc" cx=".5" cy=".4" r=".65"><stop offset="0" stop-color="#3A3466"/><stop offset="1" stop-color="#16132A"/></radialGradient>
+    <linearGradient id="gLand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8DD39A"/><stop offset="1" stop-color="#5BA06E"/></linearGradient>
+    <linearGradient id="skyFog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B3466"/><stop offset="1" stop-color="#6B5F98"/></linearGradient>
+    <linearGradient id="skyStorm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E1B33"/><stop offset="1" stop-color="#3D3760"/></linearGradient>
+    <linearGradient id="skyRain" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C3156"/><stop offset="1" stop-color="#55628A"/></linearGradient>
+    <linearGradient id="skyPartly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4D63A6"/><stop offset="1" stop-color="#A4B8DE"/></linearGradient>
+    <linearGradient id="skySun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5E9EDC"/><stop offset="1" stop-color="#CBE5F5"/></linearGradient>
+    <linearGradient id="skyEve" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B4A8C"/><stop offset=".55" stop-color="#E58A7A"/><stop offset="1" stop-color="#FFC48A"/></linearGradient>
+  </defs>
+</svg>
+
+<div class="app" id="app">
+  <div id="view"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+(function(){
+const KEY='teni-proto-v2';
+
+/* ---------- Content ---------- */
+const WEATHER=[
+  {id:'storm',label:'Гроза',line:'Гроза внутри. Будь к себе бережнее: одно маленькое дело сегодня уже победа.'},
+  {id:'rain',label:'Дождь',line:'Дождь пройдёт. В такую погоду тени громче, но не сильнее тебя.'},
+  {id:'fog',label:'Туман',line:'Туман: всё размыто. Встреча с тенью поможет понять, что за ним прячется.'},
+  {id:'partly',label:'Просветы',line:'Есть просветы. Хорошее время для смелого дела.'},
+  {id:'sun',label:'Солнце',line:'Солнечно! Запомни это чувство, вечером запишешь его в дневник.'}
+];
+const WICON={
+  storm:'<path d="M7 15a4 4 0 1 1 1-7.9A5 5 0 0 1 18 8a3.5 3.5 0 0 1 0 7"/><path d="M12 13l-2 4h3l-2 4"/>',
+  rain:'<path d="M7 14a4 4 0 1 1 1-7.9A5 5 0 0 1 18 7a3.5 3.5 0 0 1 0 7"/><path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2"/>',
+  fog:'<path d="M4 8h12M6 12h14M4 16h10M8 20h10"/>',
+  partly:'<circle cx="9" cy="8" r="3"/><path d="M9 2v1M3 8h1M4.8 3.8l.7.7"/><path d="M9 19a3.5 3.5 0 0 1 .5-7A5 5 0 0 1 19 13a3 3 0 0 1 0 6Z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+};
+const LOOKS={
+  fog:{label:'Туман',shadow:'#6E7FA3',pet:'#FFD98A'},
+  ink:{label:'Чернила',shadow:'#5E4F86',pet:'#FFB3C7'},
+  storm:{label:'Гроза',shadow:'#4E6B86',pet:'#A8D8FF'}
+};
+const STEPS={
+  fired:[
+    {q:'Что будет, если это случится?',o:[
+      ['Найду новую работу: мои навыки нужны',30,'Хм… Ну, допустим, навыки у тебя есть.'],
+      ['Будет трудно, но я справлялся и не с таким',30,'Справлялся?.. Это меняет дело.'],
+      ['Это будет катастрофа',5,'Вот! Бойся меня!']]},
+    {q:'Какие есть доказательства, что это правда?',o:[
+      ['Никаких: я закрываю все задачи',28,'Ну… задачи закрыты, тут не поспоришь.'],
+      ['Меня недавно хвалили за работу',30,'Хвалили?! Об этом мне не сказали…'],
+      ['Мне просто так кажется',5,'Кажется — значит правда! Наверное…']]},
+    {q:'Что я могу сделать уже сейчас?',o:[
+      ['Сказать руководителю, что задачи закрыты',28,'Ты что, сам пойдёшь и скажешь? Смело…'],
+      ['Потратить затишье на прокачку навыков',28,'Прокачка? Я от этого становлюсь меньше!'],
+      ['Ничего, только ждать',3,'Отлично, жди и бойся.']]}
+  ],
+  money:[
+    {q:'Что будет, если денег станет меньше?',o:[
+      ['Сокращу траты, это временно',30,'Хм, ты умеешь затягивать пояс…'],
+      ['У меня есть запас на первое время',30,'Запас? Маленький, но есть…'],
+      ['Всё рухнет',5,'Да-да, всё рухнет!']]},
+    {q:'Насколько это вероятно сейчас?',o:[
+      ['Мало: доход есть прямо сейчас',28,'Доход есть… Я про него забыла.'],
+      ['Я знаю, на чём могу сэкономить',30,'Ты что, всё посчитал? Мне скучно…'],
+      ['Очень вероятно',5,'Конечно! Я всегда права!']]},
+    {q:'Какой маленький шаг я сделаю сегодня?',o:[
+      ['Отложу любую сумму в подушку',28,'Подушка растёт? Ой, я тускнею…'],
+      ['Посчитаю, сколько нужно на три месяца',28,'Цифры на бумаге — мои злейшие враги!'],
+      ['Буду просто переживать',3,'Корми меня тревогой, корми!']]}
+  ],
+  host:[
+    {q:'Кто ты на самом деле?',o:[
+      ['Ты мой старый подгонщик, ты меня берёг',30,'Ну… да. Я старался.'],
+      ['Ты привычка, а не правда',28,'Привычка?! Обидно, но похоже на правду.'],
+      ['Ты голос совести, ты прав',5,'Вот именно! Работай!']]},
+    {q:'Чем я занят в тихие часы?',o:[
+      ['Строю своё будущее и учусь',30,'Строишь? Хм, это не безделье…'],
+      ['Восстанавливаюсь перед рывком',28,'Отдых по плану? Ладно, программа одобрена.'],
+      ['Ничем, я лентяй',5,'Ага! Попался!']]},
+    {q:'Какую новую задачу я тебе дам?',o:[
+      ['Следи, чтобы я шёл к своему бизнесу',30,'Новая должность? Мне нравится!'],
+      ['Напоминай отдыхать вовремя',28,'Затейник на страже отдыха. Звучит!'],
+      ['Продолжай кричать',3,'С удовольствием! БЕЗДЕЛЬНИК!']]}
+  ],
+  custom:[
+    {q:'Что будет, если это случится?',o:[
+      ['Справлюсь: бывало и посложнее',30,'Посложнее? Хм…'],
+      ['Попрошу помощи у близких',28,'Ты не один? Так нечестно…'],
+      ['Это будет конец всему',5,'Да, конец! Бойся!']]},
+    {q:'Насколько это вероятно на самом деле?',o:[
+      ['Скорее маловероятно',28,'Ну… может, я и преувеличиваю.'],
+      ['Возможно, но точно не завтра',28,'Не завтра? Тогда мне нечего делать…'],
+      ['Точно случится',5,'Конечно! Я всегда права!']]},
+    {q:'Какой маленький шаг я сделаю сегодня?',o:[
+      ['Сделаю первый маленький шаг',30,'Шаг? Ой, я тускнею…'],
+      ['Запишу план на бумаге',28,'План на бумаге — мой злейший враг!'],
+      ['Буду просто переживать',3,'Отлично, корми меня тревогой!']]}
+  ]
+};
+const TASKS=[
+  {id:'t1',text:'Запиши три своих рабочих успеха за месяц',shadow:'fired',light:2},
+  {id:'t2',text:'Отложи любую сумму в подушку',shadow:'money',light:2},
+  {id:'t3',text:'Скажи затейнику: «Спасибо, программа идёт по плану»',shadow:'host',light:2},
+  {id:'t4',text:'15 минут на дело, которое ведёт к твоей мечте',shadow:null,light:3}
+];
+const DEFAULT={
+  v:1,light:0,day:1,weather:null,weatherBonus:false,evening:false,lanterns:0,screen:'garden',tasksDone:{},
+  shadows:[
+    {id:'fired',kind:'fired',name:'Увольнение',pet:'Опыт',strength:80,tamed:false,line:'Тебя скоро уволят. Ты же ничего не делаешь!'},
+    {id:'money',kind:'money',name:'Пустой кошелёк',pet:'Запас',strength:60,tamed:false,line:'А вдруг денег не хватит? Что тогда?'},
+    {id:'host',kind:'host',name:'Массовик-затейник',pet:'Помощник',strength:70,tamed:false,line:'Бездельничаешь! Придёт час расплаты!'}
+  ],
+  journal:[]
+};
+
+/* ---------- State ---------- */
+let state, enc=null, sheet=null, tameShow=null, resetArmed=false, focusNext=null;
+const fresh=()=>JSON.parse(JSON.stringify(DEFAULT));
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)return s}catch(e){}return fresh()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const getSh=id=>state.shadows.find(s=>s.id===id);
+const level=l=>Math.floor(l/10)+1;
+const steps=sh=>STEPS[sh.kind]||STEPS.custom;
+
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
+function addLight(n,msg){const before=level(state.light);state.light+=n;const up=level(state.light)>before;toast(up?`Новый уровень сада: ${level(state.light)}!`:(msg||`+${n} света`))}
+
+/* ---------- Art ---------- */
+const BODY='M70 14 C105 14 124 46 124 80 C124 108 120 126 112 140 C106 132 100 142 92 136 C86 144 78 136 70 144 C62 136 54 144 48 136 C40 142 34 132 28 140 C20 126 16 108 16 80 C16 46 35 14 70 14 Z';
+const PBODY='M70 26 C100 26 116 52 116 82 C116 110 104 134 70 134 C36 134 24 110 24 82 C24 52 40 26 70 26 Z';
+const SPARK=(x,y,r,c)=>`<path d="M${x} ${y-r} L${x+r*.3} ${y-r*.3} L${x+r} ${y} L${x+r*.3} ${y+r*.3} L${x} ${y+r} L${x-r*.3} ${y+r*.3} L${x-r} ${y} L${x-r*.3} ${y-r*.3} Z" fill="${c}"/>`;
+
+function shadowArt(sh){
+  const k=sh.kind;
+  const fill=k==='fired'?'url(#gFired)':k==='money'?'url(#gMoney)':k==='host'?'url(#gHost)':LOOKS[sh.look||'fog'].shadow;
+  let s='';
+  if(k==='host')s+='<path d="M50 24 L70 -10 L90 24 Z" fill="#FF9F6B"/><path d="M56 14 L84 14 L80 8 L60 8 Z" fill="#FFE0A3"/><circle cx="70" cy="-10" r="5" fill="#8EE3C1"/>';
+  s+=`<path d="${BODY}" fill="${fill}"/>`;
+  if(k==='money')s+='<path d="M12 96 Q4 108 14 116 Q22 108 18 96 Z" fill="#E9E4F7"/><path d="M128 96 Q136 108 126 116 Q118 108 122 96 Z" fill="#E9E4F7"/>';
+  s+='<ellipse cx="54" cy="72" rx="12" ry="13" fill="#fff"/><ellipse cx="86" cy="72" rx="12" ry="13" fill="#fff"/><circle cx="55" cy="76" r="5.5" fill="#1E1B33"/><circle cx="85" cy="76" r="5.5" fill="#1E1B33"/>';
+  if(k==='money')s+='<path d="M42 56 Q50 50 64 57" stroke="#1E1B33" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M98 56 Q90 50 76 57" stroke="#1E1B33" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+  else s+='<path d="M40 57 L66 64" stroke="#1E1B33" stroke-width="3.5" stroke-linecap="round"/><path d="M100 57 L74 64" stroke="#1E1B33" stroke-width="3.5" stroke-linecap="round"/>';
+  if(k==='fired')s+='<path d="M58 100 Q64 94 70 99 Q76 94 82 100" stroke="#1E1B33" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M64 108 L76 108 L73 114 L67 114 Z" fill="#B23E5E"/><path d="M67 114 L73 114 L78 132 L70 138 L62 132 Z" fill="#D9557A"/>';
+  else if(k==='money')s+='<ellipse cx="70" cy="104" rx="6" ry="7" fill="#1E1B33"/><path d="M110 42 Q116 52 110 58 Q104 52 110 42 Z" fill="#9FD3FF"/>';
+  else if(k==='host')s+='<ellipse cx="66" cy="104" rx="12" ry="9" fill="#1E1B33"/><ellipse cx="66" cy="108" rx="6" ry="3" fill="#E85D75"/><path d="M96 98 L126 82 L126 118 L96 106 Z" fill="#FFC65C" stroke="#C98A2B" stroke-width="2.5" stroke-linejoin="round"/><rect x="88" y="96" width="10" height="12" rx="3" fill="#C98A2B"/>';
+  else s+='<path d="M56 102 Q63 96 70 102 Q77 108 84 102" stroke="#1E1B33" stroke-width="3" fill="none" stroke-linecap="round"/>';
+  return s;
+}
+function petArt(sh){
+  const k=sh.kind;
+  const fill=k==='fired'?'url(#pPeach)':k==='money'?'url(#pMint)':k==='host'?'url(#pLilac)':LOOKS[sh.look||'fog'].pet;
+  const ink=k==='money'?'#203A30':k==='host'?'#2A2050':'#3A2A2A';
+  let s='';
+  if(k==='host')s+='<path d="M58 34 L70 10 L82 34 Z" fill="#FF9F6B"/><path d="M62 26 L78 26 L75 20 L65 20 Z" fill="#FFE0A3"/><circle cx="70" cy="9" r="4.5" fill="#8EE3C1"/>';
+  if(k==='custom')s+='<path d="M70 30 Q68 18 70 12" stroke="#5BA06E" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M70 16 Q80 6 88 12 Q80 20 70 16 Z" fill="#7FD27F"/>';
+  if(k==='fired')s+='<path d="M58 30 Q62 16 70 22 Q74 12 82 22" stroke="#FF9F6B" stroke-width="5" fill="none" stroke-linecap="round"/>';
+  s+=`<path d="${PBODY}" fill="${fill}"/>`;
+  if(k==='money')s+=`<circle cx="55" cy="74" r="6" fill="${ink}"/><circle cx="85" cy="74" r="6" fill="${ink}"/><circle cx="57" cy="72" r="2" fill="#fff"/><circle cx="87" cy="72" r="2" fill="#fff"/>`;
+  else s+=`<path d="M48 76 Q55 68 62 76" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M78 76 Q85 68 92 76" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+  s+=`<ellipse cx="46" cy="90" rx="7" ry="4" fill="#F2716B" opacity=".55"/><ellipse cx="94" cy="90" rx="7" ry="4" fill="#F2716B" opacity=".55"/><path d="M60 92 Q70 104 80 92" stroke="${ink}" stroke-width="3.5" fill="none" stroke-linecap="round"/>`;
+  if(k==='fired')s+='<path d="M70 114 L56 106 L56 122 Z" fill="#6B5BD6"/><path d="M70 114 L84 106 L84 122 Z" fill="#6B5BD6"/><circle cx="70" cy="114" r="4.5" fill="#8C7DF0"/>';
+  if(k==='money')s+='<circle cx="70" cy="116" r="14" fill="#FFC65C" stroke="#C98A2B" stroke-width="3"/><circle cx="70" cy="116" r="8" fill="none" stroke="#C98A2B" stroke-width="2"/>';
+  if(k==='host')s+=SPARK(108,118,10,'#FFC65C');
+  return s;
+}
+function heroArt(glow){
+  return `<circle cx="124" cy="112" r="${46*glow}" fill="url(#gLamp)" class="flicker"/>
+  <ellipse cx="80" cy="192" rx="44" ry="6" fill="#15122A" opacity=".5"/>
+  <path d="M46 188 L114 188 L104 104 Q80 86 56 104 Z" fill="url(#gCloak)"/>
+  <circle cx="80" cy="76" r="36" fill="#3A5F9E"/><circle cx="80" cy="84" r="25" fill="#F6D2B0"/>
+  <path d="M58 74 Q80 52 102 74 Q92 64 80 64 Q68 64 58 74 Z" fill="#3A5F9E"/>
+  <circle cx="71" cy="84" r="3.4" fill="#2A2440"/><circle cx="89" cy="84" r="3.4" fill="#2A2440"/>
+  <circle cx="72.2" cy="82.8" r="1.1" fill="#fff"/><circle cx="90.2" cy="82.8" r="1.1" fill="#fff"/>
+  <ellipse cx="64" cy="93" rx="4.5" ry="2.6" fill="#F59E8B" opacity=".7"/><ellipse cx="96" cy="93" rx="4.5" ry="2.6" fill="#F59E8B" opacity=".7"/>
+  <path d="M74 95 Q80 101 86 95" stroke="#2A2440" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M56 108 Q80 120 104 108 L102 118 Q80 130 58 118 Z" fill="#FF9F6B"/>
+  <path d="M100 136 Q112 124 120 100" stroke="#8A6A4A" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <rect x="113" y="96" width="22" height="6" rx="2" fill="#7A5A3A"/>
+  <rect x="112" y="101" width="24" height="28" rx="7" fill="#FFC65C" stroke="#C98A2B" stroke-width="2.5"/>
+  <path d="M124 108 Q130 116 124 123 Q118 116 124 108 Z" fill="#FF8A3D"/>
+  <ellipse cx="66" cy="189" rx="10" ry="5" fill="#2F2A4A"/><ellipse cx="94" cy="189" rx="10" ry="5" fill="#2F2A4A"/>`;
+}
+// place art (box 140x150 for creatures, 160x192 for hero) by bottom-centre
+const place=(inner,cx,bottom,s,cls='',w=140,h=150)=>`<g transform="translate(${(cx-w/2*s).toFixed(1)} ${(bottom-h*s).toFixed(1)}) scale(${s.toFixed(3)})"><g class="${cls}">${inner}</g></g>`;
+const mini=(sh,tamed)=>`<svg viewBox="-5 -14 150 164" aria-hidden="true">${tamed?petArt(sh):shadowArt(sh)}</svg>`;
+
+function gardenSVG(){
+  const w=state.weather||'fog', eve=state.evening, lv=level(state.light);
+  const sky=eve?'skyEve':{storm:'skyStorm',rain:'skyRain',fog:'skyFog',partly:'skyPartly',sun:'skySun'}[w];
+  let s=`<rect width="360" height="300" fill="url(#${sky})"/>`;
+  if(eve) s+='<circle cx="292" cy="176" r="60" fill="#FFE7B0" opacity=".25" class="pulse"/><circle cx="292" cy="176" r="28" fill="#FFE7B0"/>';
+  else if(w==='sun'||w==='partly') s+='<circle cx="290" cy="60" r="42" fill="#FFF3C4" opacity=".35" class="pulse"/><circle cx="290" cy="60" r="22" fill="#FFE59A"/>';
+  else s+='<circle cx="290" cy="56" r="30" fill="#F4E8C8" opacity=".18" class="pulse"/><circle cx="290" cy="56" r="20" fill="#F4E8C8" opacity=".85"/><circle cx="298" cy="50" r="18" fill="#5A4F88" opacity=".9"/>';
+  if(!eve&&(w==='fog'||w==='storm')) [[40,40,1.6],[120,24,1.2],[210,44,1.8],[160,70,1.2],[80,86,1.1],[250,22,1.4],[24,110,1.2]].forEach(([x,y,r],i)=>{s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#FFE7B0" class="twinkle" style="animation-delay:-${(i*.7).toFixed(1)}s"/>`});
+  if(!eve&&(w==='partly'||w==='rain'||w==='storm')){
+    const c=w==='partly'?'#F4F6FF':w==='rain'?'#8D96B8':'#4C4670';
+    s+=`<g fill="${c}" opacity=".95"><g class="drift"><ellipse cx="90" cy="62" rx="44" ry="16"/><ellipse cx="116" cy="50" rx="28" ry="18"/></g><g class="drift slow"><ellipse cx="226" cy="84" rx="40" ry="14"/><ellipse cx="248" cy="74" rx="24" ry="15"/></g></g>`;
+  }
+  s+='<ellipse cx="180" cy="272" rx="190" ry="44" fill="#2A2450"/><path d="M18 236 Q180 176 342 236 L324 264 Q180 302 36 264 Z" fill="url(#gLand)"/><path d="M36 264 Q180 302 324 264 L304 282 Q180 312 56 282 Z" fill="#6A5A48"/>';
+  if(lv>=2){
+    s+='<rect x="64" y="148" width="11" height="78" rx="4" fill="#7A5A3A"/><g class="sway"><circle cx="69" cy="138" r="36" fill="#4E8A64"/><circle cx="48" cy="156" r="24" fill="#5E9B72"/><circle cx="90" cy="154" r="26" fill="#5E9B72"/>';
+    if(lv>=3) s+='<circle cx="56" cy="128" r="6" fill="#FFB38A"/><circle cx="84" cy="134" r="6" fill="#FFE0A3"/><circle cx="70" cy="156" r="6" fill="#B9A4FF"/><circle cx="96" cy="150" r="5" fill="#FFB38A"/><circle cx="42" cy="148" r="5" fill="#8EE3C1"/>';
+    s+='</g>';
+  }
+  if(lv>=4) s+='<ellipse cx="318" cy="232" rx="22" ry="14" fill="#5E9B72"/><circle cx="310" cy="226" r="4" fill="#FFB38A"/><circle cx="324" cy="230" r="4" fill="#B9A4FF"/>';
+  const spots=[[40,248],[118,228],[150,232],[222,226],[262,228],[292,240],[132,250],[60,238],[244,246],[312,250],[96,250],[200,250]];
+  const cols=['#FFB38A','#B9A4FF','#FFE0A3','#8EE3C1'];
+  const nf=Math.min(spots.length,Math.floor(state.light/3));
+  for(let i=0;i<nf;i++){const[x,y]=spots[i];s+=`<g class="flower" style="animation-delay:-${(i*.41).toFixed(2)}s;animation-duration:${(2.8+(i%4)*.35).toFixed(2)}s"><rect x="${x-1.5}" y="${y}" width="3" height="14" fill="#3E7A52"/><circle cx="${x}" cy="${y-2}" r="5.5" fill="${cols[i%4]}"/><circle cx="${x}" cy="${y-2}" r="2" fill="#fff" opacity=".6"/></g>`}
+  const ls=[[108,240],[254,236],[300,242],[30,242],[204,238]];
+  for(let i=0;i<Math.min(ls.length,state.lanterns);i++){const[x,y]=ls[i];
+    s+=`<circle cx="${x}" cy="${y-30}" r="${eve?18:11}" fill="url(#gLamp)" class="flicker"/><rect x="${x-1.5}" y="${y-28}" width="3" height="30" fill="#5A4A3A"/><rect x="${x-6}" y="${y-38}" width="12" height="13" rx="3" fill="#FFC65C" stroke="#C98A2B" stroke-width="1.5"/>`}
+  const pets=state.shadows.filter(x=>x.tamed), pp=[[234,256],[134,258],[284,262],[88,262],[318,264]];
+  pets.slice(0,pp.length).forEach((p,i)=>{s+=place(petArt(p),pp[i][0],pp[i][1],.27,'bob d'+((i%3)+1))});
+  const lurk=state.shadows.filter(x=>!x.tamed), lp=[[334,214],[22,212],[318,150],[40,150]];
+  lurk.slice(0,lp.length).forEach((p,i)=>{const sc=.17+p.strength*.0016;s+=`<g opacity="${(.45+p.strength*.004).toFixed(2)}">${place(shadowArt(p),lp[i][0],lp[i][1],sc,'lurk')}</g>`});
+  s+=place(heroArt(eve?1.4:1),180,258,.42,'breathe',160,192);
+  const nfly=eve?8:{fog:6,storm:2,rain:2,partly:3,sun:3}[w];
+  [[60,196],[122,160],[252,182],[302,204],[204,140],[92,124],[160,206],[322,150]].slice(0,nfly).forEach(([x,y],i)=>{
+    s+=`<g class="fly" style="animation-delay:-${(i*.83).toFixed(2)}s;animation-duration:${5+(i%3)}s"><circle cx="${x}" cy="${y}" r="5" fill="#FFF3A8" opacity=".3"/><circle cx="${x}" cy="${y}" r="1.8" fill="#FFF7C8"/></g>`});
+  if(!eve&&(w==='sun'||w==='partly')) s+='<g class="butterfly"><g class="wing"><ellipse cx="-4" cy="0" rx="4.5" ry="5.5" fill="#FFB3C7"/><ellipse cx="4" cy="0" rx="4.5" ry="5.5" fill="#B9A4FF"/></g><rect x="-.8" y="-4" width="1.6" height="8" rx=".8" fill="#3A2A4A"/></g>';
+  if(!eve){
+    const fo={storm:.12,rain:.1,fog:.14,partly:.05,sun:0}[w];
+    if(fo) s+=`<g fill="#fff" opacity="${fo}"><rect x="-10" y="150" width="380" height="16" rx="8" class="fog"/><rect x="40" y="182" width="320" height="12" rx="6" class="fog" style="animation-delay:-5s;animation-duration:17s"/><rect x="-20" y="208" width="260" height="14" rx="7" class="fog" style="animation-delay:-9s;animation-duration:11s"/></g>`;
+    if(w==='rain'||w==='storm'){s+='<g stroke="#BFD4FF" stroke-width="2" stroke-linecap="round" opacity=".55">';for(let i=0;i<22;i++){const x=(i*41)%360+8,y=(i*67)%200+20;s+=`<path d="M${x} ${y} l-4 10" class="drop" style="animation-delay:-${((i*.37)%1).toFixed(2)}s"/>`}s+='</g>'}
+    if(w==='storm') s+='<g opacity=".3"><rect width="360" height="300" fill="#E8E4FF" class="flash"/></g><path d="M232 92 L222 116 L232 116 L224 138" stroke="#FFE59A" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round" class="flash"/>';
+  }
+  const desc=`Сад уровня ${lv}: ${eve?'закат':WEATHER.find(x=>x.id===w).label.toLowerCase()}, питомцев ${pets.length}, теней рядом ${lurk.length}`;
+  return `<svg viewBox="0 0 360 300" role="img" aria-label="${esc(desc)}">${s}</svg>`;
+}
+function encounterSVG(sh){
+  const sc=.55+sh.strength/100*.75, glow=1+enc.step*.25+(enc.phase!=='ask'?.2:0);
+  const hit=enc.phase==='reply'&&!enc.weak?'hit':'';
+  return `<svg viewBox="0 0 360 290" role="img" aria-label="Тень «${esc(sh.name)}», сила ${sh.strength} процентов, напротив неё герой с фонарём">
+  <rect width="360" height="290" fill="url(#gEnc)"/>
+  <ellipse cx="180" cy="282" rx="200" ry="28" fill="#221E3C"/>
+  <g opacity="${(.55+sh.strength*.0045).toFixed(2)}">${place(shadowArt(sh),228,270,sc,hit)}</g>
+  ${place(heroArt(glow),64,284,.48,'',160,192)}
+  <g fill="#fff" opacity=".06"><rect x="0" y="200" width="360" height="12" rx="6"/><rect x="40" y="250" width="320" height="10" rx="5"/></g>
+  </svg>`;
+}
+
+/* ---------- Views ---------- */
+const ORB='<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFC65C" opacity=".28"/><circle cx="12" cy="12" r="6" fill="#FFC65C"/></svg>';
+const CHECK=c=>`<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>`;
+const strengthColor=v=>v>60?'var(--danger)':v>30?'var(--warn)':'var(--mint)';
+const strengthBar=v=>`<div class="strength"><div class="bar" role="img" aria-label="Сила тени ${v} процентов"><i style="width:${v}%;background:${strengthColor(v)}"></i></div><span>${v}%</span></div>`;
+
+function header(){
+  const lv=level(state.light), p=(state.light%10)*10;
+  const wl=state.weather?WEATHER.find(w=>w.id===state.weather).label.toLowerCase():'погода не выбрана';
+  return `<header class="top">
+    <div><p class="eyebrow">День ${state.day} · ${state.evening?'вечер':wl}</p><h1>Привет!</h1></div>
+    <div class="top-right"><span class="chip" aria-label="Света: ${state.light}">${ORB}${state.light}</span>
+    <button class="icon-btn" data-action="open-settings" aria-label="Настройки прототипа"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div>
+  </header>
+  <div class="lvl"><span>Сад · ур. ${lv}</span><div class="bar" role="img" aria-label="До следующего уровня ${10-state.light%10} света"><i style="width:${p}%"></i></div><span>${state.light%10}/10</span></div>`;
+}
+
+function gardenScreen(){
+  const untamed=state.shadows.filter(s=>!s.tamed);
+  const nextTask=TASKS.find(t=>!state.tasksDone[t.id]&&(!t.shadow||!getSh(t.shadow)?.tamed))||TASKS.find(t=>!state.tasksDone[t.id]);
+  const wline=state.weather?WEATHER.find(w=>w.id===state.weather).line:'';
+  return `
+  <section class="card" aria-labelledby="wh">
+    <div class="card-head"><h2 id="wh">Какая погода внутри?</h2>${state.weatherBonus?'':'<span class="muted">+1 свет</span>'}</div>
+    <div class="weather">${WEATHER.map(w=>`<button class="wbtn" data-action="weather" data-arg="${w.id}" aria-pressed="${state.weather===w.id}"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WICON[w.id]}</svg>${w.label}</button>`).join('')}</div>
+    ${wline?`<p class="mood">${wline}</p>`:''}
+  </section>
+  <div class="garden">${gardenSVG()}<span class="gchip tl">Питомцев: ${state.shadows.filter(s=>s.tamed).length}</span><span class="gchip br">Фонарей: ${state.lanterns}</span></div>
+  <section class="card" aria-labelledby="th">
+    <div class="card-head"><h2 id="th">Тени рядом</h2><span class="muted">${untamed.length}</span></div>
+    ${untamed.length?untamed.map(sh=>`<div class="row"><div class="mini">${mini(sh,false)}</div><div class="grow"><span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}</div><button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join(''):'<p class="muted">Все тени приручены. Если что-то снова тревожит, создай новую тень в разделе «Тени».</p>'}
+  </section>
+  ${nextTask&&!state.tasksDone[nextTask.id]?`<section class="task-card" aria-label="Смелое дело дня">
+    <div class="badge">${CHECK('#7A4E0E')}</div>
+    <div class="grow" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><p class="label">Смелое дело дня</p><p class="t">${nextTask.text}</p></div>
+    <button class="btn" data-action="task" data-arg="${nextTask.id}">Сделал</button></section>`:`<section class="card"><p class="label">Смелые дела</p><p class="muted">На сегодня всё сделано. Тени это заметили.</p></section>`}
+  <section class="card">
+    <p class="label">Вечер</p>
+    ${state.evening?`<p class="lit"><span class="dot" aria-hidden="true"></span>Фонари сегодня зажжены. Сад на закате.</p>`:`<p style="font-weight:700">Запиши три хорошие вещи за день и зажги фонари в саду.</p><button class="btn ghost" data-action="nav" data-arg="journal">Открыть дневник</button>`}
+  </section>`;
+}
+
+function shadowsScreen(){
+  return `<div class="section-title"><h2>Тени и питомцы</h2><span class="muted">${state.shadows.filter(s=>s.tamed).length} из ${state.shadows.length} приручено</span></div>
+  <p class="muted">Каждый страх живёт здесь как тень. Честные ответы и смелые дела делают её меньше, пока она не станет питомцем.</p>
+  <div class="sgrid">
+  ${state.shadows.map(sh=>sh.tamed?`<div class="scard">${mini(sh,true)}<span class="name">«${esc(sh.pet)}»</span><span class="tag">Был тенью «${esc(sh.name)}»</span></div>`
+    :`<div class="scard">${mini(sh,false)}<span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}<button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join('')}
+  <button class="add" data-action="open-create"><svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Создать свою тень</button>
+  </div>`;
+}
+
+function tasksScreen(){
+  const done=TASKS.filter(t=>state.tasksDone[t.id]).length;
+  return `<div class="section-title"><h2>Смелые дела</h2><span class="muted">${done} из ${TASKS.length}</span></div>
+  <p class="muted">Маленькие реальные действия. Каждое даёт свет и ослабляет связанную тень на 20%.</p>
+  ${TASKS.map(t=>{const sh=t.shadow&&getSh(t.shadow);const d=!!state.tasksDone[t.id];
+    const rw=`+${t.light} света`+(sh&&!sh.tamed?` · тень «${esc(sh.name)}» −20%`:'');
+    return `<button class="task${d?' done':''}" data-action="task" data-arg="${t.id}" aria-pressed="${d}"><span class="check">${d?CHECK('#2A1F0E'):''}</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="tt">${t.text}</span><span class="rw">${d?'Сделано':rw}</span></span></button>`}).join('')}`;
+}
+
+function journalScreen(){
+  const today=state.journal.find(j=>j.day===state.day);
+  return `<div class="section-title"><h2>Три хорошие вещи</h2><span class="muted">День ${state.day}</span></div>
+  ${today?`<section class="card"><p class="label">Сегодня</p><ul style="margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:10px">${today.items.map(i=>`<li class="lit"><span class="dot" aria-hidden="true"></span>${esc(i)}</li>`).join('')}</ul><p class="muted">Фонари зажжены. Завтра будет новая запись.</p></section>`
+  :`<form class="card" data-form="journal" novalidate>
+    <p style="font-weight:700">Что сегодня было в порядке? Даже мелочь считается.</p>
+    ${[1,2,3].map(n=>`<div class="field"><label for="j${n}">Хорошая вещь ${n}</label><input id="j${n}" autocomplete="off" maxlength="80" placeholder="${['Например: выспался','Например: вкусно поел','Например: закрыл задачу'][n-1]}"></div>`).join('')}
+    <p class="err" id="jerr" role="alert"></p>
+    <button class="btn big" type="submit">Зажечь фонари · +3 света</button>
+  </form>`}
+  <section class="card"><p class="label">Прошлые записи</p>
+    ${state.journal.filter(j=>j.day!==state.day).map(j=>`<div class="entry"><span class="muted">${j.example?'Пример из разговора':'День '+j.day}</span><ul>${j.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')||'<p class="muted">Пока пусто.</p>'}
+  </section>`;
+}
+
+function nav(){
+  const items=[['garden','Сад','<path d="M12 21v-8"/><path d="M12 13c-4 0-6-3-6-7 4 0 6 3 6 7Z"/><path d="M12 13c4 0 6-3 6-7-4 0-6 3-6 7Z"/><path d="M5 21h14"/>'],
+    ['shadows','Тени','<path d="M5 20V11a7 7 0 0 1 14 0v9l-2.3-1.5L14.3 20 12 18.5 9.7 20l-2.4-1.5Z"/><circle cx="9.5" cy="11" r="1"/><circle cx="14.5" cy="11" r="1"/>'],
+    ['tasks','Дела','<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>'],
+    ['journal','Дневник','<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3Z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>']];
+  return `<nav class="nav" aria-label="Разделы">${items.map(([id,l,ic])=>`<button data-action="nav" data-arg="${id}" ${state.screen===id?'aria-current="page"':''}><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg>${l}</button>`).join('')}</nav>`;
+}
+
+function encounterView(){
+  const sh=getSh(enc.id), st=steps(sh), cur=st[Math.min(enc.step,2)];
+  const bubble=enc.phase==='reply'?enc.reply:(enc.step===0?sh.line:enc.reply);
+  let body='';
+  if(enc.phase==='ask'){
+    body=`<h2 id="eq">${cur.q}</h2>
+    ${cur.o.map((o,i)=>`<button class="opt" data-action="answer" data-arg="${i}">${o[0]}</button>`).join('')}
+    <form class="own" data-form="own"><label class="sr" for="ownin" style="position:absolute;left:-9999px">Свой ответ</label><input id="ownin" autocomplete="off" maxlength="100" placeholder="Или ответь своими словами"><button class="btn" type="submit">Ответить</button></form>`;
+  } else if(enc.phase==='reply'){
+    body=`<div class="delta"><span style="color:${enc.weak?'var(--danger)':'var(--mint)'}">Тень −${enc.delta}%</span>${enc.weak?'':'<span style="color:var(--lamp-soft)">+1 свет</span>'}</div>
+    ${enc.weak?'<p class="hint">Это ответ самой тени, поэтому он почти её не ослабил. Попробуй опираться на факты: что у тебя уже есть и что ты можешь сделать.</p>':''}
+    <button class="btn big" data-action="next">${sh.strength<=0?'Тень тает…':enc.step<2?'Следующий вопрос':'Завершить встречу'}</button>`;
+  } else {
+    body=`<h2>Тень ослабла до ${sh.strength}%</h2><p class="muted">Сегодня ты задал ей все вопросы. Смелые дела в разделе «Дела» добьют её, а завтра можно встретиться снова.</p>
+    <div style="display:flex;gap:8px"><button class="btn" style="flex:1" data-action="nav" data-arg="tasks">К делам</button><button class="btn ghost" style="flex:1" data-action="close-enc">В сад</button></div>`;
+  }
+  return `<section class="overlay" role="dialog" aria-modal="true" aria-label="Встреча с тенью «${esc(sh.name)}»">
+    <div class="enc-top"><button class="icon-btn" data-action="close-enc" aria-label="Уйти в сад"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><p>Встреча с тенью</p><span class="pill">${enc.phase==='end'?'Итог':`Вопрос ${enc.step+1} из 3`}</span></div>
+    <div class="enc-scene">${encounterSVG(sh)}<div class="bubble">${esc(bubble)}</div></div>
+    <div class="enc-meter"><div class="card-head"><span class="name" style="font-weight:800">${esc(sh.name)}</span><span style="font-weight:800;font-size:14px;color:${strengthColor(sh.strength)}">сила ${sh.strength}%</span></div><div class="bar"><i style="width:${sh.strength}%;background:${strengthColor(sh.strength)}"></i></div></div>
+    <div class="enc-card">${body}</div>
+  </section>`;
+}
+
+function sheetView(){
+  if(sheet.type==='settings') return `<div class="sheet-wrap" data-action="close-sheet-bg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh1">
+    <h2 id="sh1">Прототип</h2><p class="muted">Кнопки для проверки механики. Прогресс хранится только в этом браузере.</p>
+    <button class="btn big" data-action="new-day">Начать новый день</button>
+    <button class="btn big ghost" data-action="reset" style="${resetArmed?'border-color:var(--danger);color:var(--danger)':''}">${resetArmed?'Нажми ещё раз, чтобы сбросить всё':'Сбросить прогресс'}</button>
+    <button class="btn ghost" data-action="close-sheet">Закрыть</button></div></div>`;
+  return `<div class="sheet-wrap" data-action="close-sheet-bg"><form class="sheet" data-form="create" role="dialog" aria-modal="true" aria-labelledby="sh2" novalidate>
+    <h2 id="sh2">Новая тень</h2><p class="muted">Назови страх так, как он звучит у тебя в голове. Можно с юмором.</p>
+    <div class="field"><label for="cname">Имя тени</label><input id="cname" maxlength="28" autocomplete="off" placeholder="Например: Страх выступлений"></div>
+    <p class="label">Как она выглядит</p>
+    <div class="looks">${Object.entries(LOOKS).map(([k,l])=>`<button type="button" class="look" data-action="look" data-arg="${k}" aria-pressed="${sheet.look===k}">${mini({kind:'custom',look:k},false)}${l.label}</button>`).join('')}</div>
+    <p class="err" id="cerr" role="alert"></p>
+    <button class="btn big" type="submit">Создать тень</button>
+    <button class="btn ghost" type="button" data-action="close-sheet">Отмена</button>
+  </form></div>`;
+}
+
+function tameView(){
+  const sh=getSh(tameShow);
+  return `<section class="tame" role="dialog" aria-modal="true" aria-labelledby="tm">
+    <div class="stage">
+      <svg viewBox="-5 -14 150 164" class="t-shadow" aria-hidden="true">${shadowArt(sh)}</svg>
+      <svg viewBox="-5 -14 150 164" class="t-pet" role="img" aria-label="Питомец «${esc(sh.pet)}»">${petArt(sh)}</svg>
+      <svg viewBox="0 0 220 230" class="t-spark" aria-hidden="true">${SPARK(30,40,10,'#FFE0A3')}${SPARK(190,60,8,'#8EE3C1')}${SPARK(200,170,11,'#FFC65C')}${SPARK(24,180,7,'#B9A4FF')}${SPARK(110,8,6,'#FFE0A3')}</svg>
+    </div>
+    <h2 id="tm">Тень приручена!</h2>
+    <p>«${esc(sh.name)}» теперь твой питомец «${esc(sh.pet)}». Он поселился в саду.</p>
+    <p class="reward">+5 света</p>
+    <button class="btn big" style="max-width:300px" data-action="close-tame">В сад</button>
+  </section>`;
+}
+
+function screenBody(){return {garden:gardenScreen,shadows:shadowsScreen,tasks:tasksScreen,journal:journalScreen}[state.screen]()}
+
+function render(keepScroll=true){
+  const old=document.getElementById('screen'), top=old&&keepScroll?old.scrollTop:0;
+  document.getElementById('view').innerHTML=header()+`<main class="screen" id="screen">${screenBody()}</main>`+nav()+(enc?encounterView():'')+(sheet?sheetView():'')+(tameShow?tameView():'');
+  const scr=document.getElementById('screen'); if(scr) scr.scrollTop=top;
+  if(focusNext){const el=document.querySelector(focusNext); if(el) el.focus({preventScroll:true}); focusNext=null}
+}
+
+/* ---------- Mechanics ---------- */
+function tame(sh){sh.tamed=true;sh.strength=0;state.light+=5;tameShow=sh.id;focusNext='.tame .btn'}
+function hurt(sh,d){sh.strength=Math.max(0,sh.strength-d)}
+
+const actions={
+  nav(id){state.screen=id;enc=null;save();render(false)},
+  weather(id){state.weather=id;if(!state.weatherBonus){state.weatherBonus=true;addLight(1,'+1 свет за честность с собой')}save();render()},
+  meet(id){enc={id,step:0,phase:'ask',reply:'',delta:0,weak:false};focusNext='.overlay .icon-btn';render()},
+  answer(i){const sh=getSh(enc.id),o=steps(sh)[enc.step].o[+i];respond(sh,o[1],o[2])},
+  next(){const sh=getSh(enc.id);
+    if(sh.strength<=0){enc=null;tame(sh)}
+    else if(enc.step<2){enc.step++;enc.phase='ask';focusNext='#eq'}
+    else enc.phase='end';
+    save();render()},
+  'close-enc'(){enc=null;render()},
+  task(id){if(state.tasksDone[id])return;const t=TASKS.find(x=>x.id===id);state.tasksDone[id]=true;
+    const sh=t.shadow&&getSh(t.shadow);addLight(t.light);
+    if(sh&&!sh.tamed){hurt(sh,20);if(sh.strength<=0)tame(sh)}
+    save();render()},
+  'open-settings'(){sheet={type:'settings'};resetArmed=false;focusNext='.sheet .btn';render()},
+  'open-create'(){sheet={type:'create',look:'fog'};focusNext='#cname';render()},
+  look(k,b){sheet.look=k;document.querySelectorAll('.look').forEach(x=>x.setAttribute('aria-pressed',x.dataset.arg===k))},
+  'close-sheet'(){sheet=null;render()},
+  'close-sheet-bg'(a,b,e){if(e.target===b){sheet=null;render()}},
+  'new-day'(){state.day++;state.weather=null;state.weatherBonus=false;state.evening=false;state.tasksDone={};sheet=null;state.screen='garden';save();render(false);toast(`Утро. День ${state.day}`)},
+  reset(){if(!resetArmed){resetArmed=true;render();return}state=fresh();sheet=null;enc=null;tameShow=null;resetArmed=false;save();render(false);toast('Прогресс сброшен')},
+  'close-tame'(){tameShow=null;state.screen='garden';render(false)}
+};
+function respond(sh,d,r){hurt(sh,d);enc.phase='reply';enc.reply=r;enc.delta=d;enc.weak=d<10;if(!enc.weak)state.light+=1;focusNext='.enc-card .btn';save();render()}
+
+const forms={
+  own(f){const v=f.querySelector('#ownin').value.trim();if(v.length<3){f.querySelector('#ownin').focus();return}
+    respond(getSh(enc.id),25,'Своими словами? Это сильнее всего… Я тускнею.')},
+  journal(f){const vals=[1,2,3].map(n=>f.querySelector('#j'+n).value.trim());const empty=vals.findIndex(v=>!v);
+    if(empty>-1){f.querySelector('#jerr').textContent='Заполни все три строки, даже мелочь считается.';f.querySelector('#j'+(empty+1)).focus();return}
+    state.journal.unshift({day:state.day,items:vals});state.evening=true;state.lanterns++;
+    addLight(3,'Фонари зажжены: +3 света');save();render()},
+  create(f){const name=f.querySelector('#cname').value.trim();if(!name){f.querySelector('#cerr').textContent='Дай тени имя, чтобы с ней можно было говорить.';f.querySelector('#cname').focus();return}
+    state.shadows.push({id:'c'+Date.now(),kind:'custom',look:sheet.look,name,pet:'Смелость',strength:70,tamed:false,line:`Я — твоя тень «${name}». Ты со мной не справишься!`});
+    sheet=null;state.screen='shadows';save();render();toast('Тень появилась у края сада')}
+};
+
+const root=document.getElementById('app');
+root.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b||!root.contains(b))return;const fn=actions[b.dataset.action];if(fn)fn(b.dataset.arg,b,e)});
+root.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();forms[f.dataset.form]?.(f)});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tameShow)actions['close-tame']();else if(sheet)actions['close-sheet']();else if(enc)actions['close-enc']()});
+
+function boot(data){state=(data&&data.state&&data.state.v===1)?data.state:load();render(false)}
+if(window.claude?.hot?.snapshot) window.claude.hot.snapshot(()=>({state}));
+window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
+})();
+</script>
+
+</html>
