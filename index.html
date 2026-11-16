@@ -173,7 +173,21 @@ p{margin:0}
 .tame p{max-width:300px;font-weight:700;color:var(--ink)}
 .tame .reward{color:var(--lamp-soft);font-weight:800}
 
-.toast{position:absolute;left:50%;top:14px;z-index:50;transform:translate(-50%,-140%);background:var(--lamp);color:var(--lamp-ink);font-weight:800;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .3s ease;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+.intro{position:absolute;inset:0;z-index:45;background:radial-gradient(circle at 50% 30%,#3A3170 0%,#16132A 72%);display:flex;flex-direction:column;align-items:center;gap:14px;padding:64px 20px 24px;text-align:center;overflow-y:auto}
+.intro .skip{position:absolute;right:12px;top:12px;min-height:44px;padding:0 14px;border:none;background:none;color:var(--muted);font-weight:800;font-size:14px}
+.intro-art{width:100%;max-width:320px;height:210px;display:flex;align-items:center;justify-content:center;gap:10px;flex-shrink:0}
+.intro-art svg{height:100%;max-width:100%}
+.intro-art .garden-mini{border-radius:22px;overflow:hidden;border:1px solid var(--line);height:100%;aspect-ratio:360/300;max-width:100%}
+.intro-art .garden-mini svg{display:block;width:100%;height:100%}
+.intro h2{font-size:26px;color:var(--lamp)}
+.intro p{max-width:330px;font-weight:700;line-height:1.5}
+.intro .note{font-size:13px;color:var(--muted);font-weight:600}
+.dots{display:flex;gap:8px}
+.dots span{width:8px;height:8px;border-radius:999px;background:var(--line)}
+.dots span.on{background:var(--lamp);width:22px}
+.intro-nav{margin-top:auto;display:flex;gap:10px;width:100%;max-width:330px}
+.intro-nav .btn{flex:1;min-height:52px;font-size:16px}
+.toast{position:absolute;left:50%;top:14px;z-index:50;transform:translate(-50%,-220%);background:var(--lamp);color:var(--lamp-ink);font-weight:800;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .3s ease;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .toast.show{transform:translate(-50%,0)}
 
 .bob{animation:bob 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center bottom}
@@ -334,7 +348,7 @@ const TASKS=[
   {id:'t4',text:'15 минут на дело, которое ведёт к твоей мечте',shadow:null,light:3}
 ];
 const DEFAULT={
-  v:1,light:0,day:1,weather:null,weatherBonus:false,evening:false,lanterns:0,screen:'garden',tasksDone:{},
+  v:1,light:0,day:1,weather:null,weatherBonus:false,evening:false,lanterns:0,seenIntro:false,lastDate:null,screen:'garden',tasksDone:{},
   shadows:[
     {id:'fired',kind:'fired',name:'Увольнение',pet:'Опыт',strength:80,tamed:false,line:'Тебя скоро уволят. Ты же ничего не делаешь!'},
     {id:'money',kind:'money',name:'Пустой кошелёк',pet:'Запас',strength:60,tamed:false,line:'А вдруг денег не хватит? Что тогда?'},
@@ -344,7 +358,7 @@ const DEFAULT={
 };
 
 /* ---------- State ---------- */
-let state, enc=null, sheet=null, tameShow=null, resetArmed=false, focusNext=null;
+let state, enc=null, sheet=null, tameShow=null, resetArmed=false, focusNext=null, intro=null;
 const fresh=()=>JSON.parse(JSON.stringify(DEFAULT));
 function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)return s}catch(e){}return fresh()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
@@ -484,6 +498,7 @@ function header(){
   return `<header class="top">
     <div><p class="eyebrow">День ${state.day} · ${state.evening?'вечер':wl}</p><h1>Привет!</h1></div>
     <div class="top-right"><span class="chip" aria-label="Света: ${state.light}">${ORB}${state.light}</span>
+    <button class="icon-btn" data-action="open-help" aria-label="Как играть"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4"/><circle cx="12" cy="17" r=".7" fill="currentColor"/></svg></button>
     <button class="icon-btn" data-action="open-settings" aria-label="Настройки прототипа"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div>
   </header>
   <div class="lvl"><span>Сад · ур. ${lv}</span><div class="bar" role="img" aria-label="До следующего уровня ${10-state.light%10} света"><i style="width:${p}%"></i></div><span>${state.light%10}/10</span></div>`;
@@ -496,12 +511,15 @@ function gardenScreen(){
   return `
   <section class="card" aria-labelledby="wh">
     <div class="card-head"><h2 id="wh">Какая погода внутри?</h2>${state.weatherBonus?'':'<span class="muted">+1 свет</span>'}</div>
+    ${state.weather?'':'<p class="muted">Отметь, как ты сейчас. Любая погода нормальна: это просто честный взгляд на себя. Каждое утро погода выбирается заново.</p>'}
     <div class="weather">${WEATHER.map(w=>`<button class="wbtn" data-action="weather" data-arg="${w.id}" aria-pressed="${state.weather===w.id}"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WICON[w.id]}</svg>${w.label}</button>`).join('')}</div>
     ${wline?`<p class="mood">${wline}</p>`:''}
   </section>
   <div class="garden">${gardenSVG()}<span class="gchip tl">Питомцев: ${state.shadows.filter(s=>s.tamed).length}</span><span class="gchip br">Фонарей: ${state.lanterns}</span></div>
+  <p class="muted" style="margin-top:-6px;text-align:center">Свет растит сад навсегда. Погода, смелые дела и вечерние фонари обновляются каждый день.</p>
   <section class="card" aria-labelledby="th">
     <div class="card-head"><h2 id="th">Тени рядом</h2><span class="muted">${untamed.length}</span></div>
+    <p class="muted">Тень — это тревога или страх, сказанные словами. Встреться с ней, чтобы она стала слабее.</p>
     ${untamed.length?untamed.map(sh=>`<div class="row"><div class="mini">${mini(sh,false)}</div><div class="grow"><span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}</div><button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join(''):'<p class="muted">Все тени приручены. Если что-то снова тревожит, создай новую тень в разделе «Тени».</p>'}
   </section>
   ${nextTask&&!state.tasksDone[nextTask.id]?`<section class="task-card" aria-label="Смелое дело дня">
@@ -516,7 +534,7 @@ function gardenScreen(){
 
 function shadowsScreen(){
   return `<div class="section-title"><h2>Тени и питомцы</h2><span class="muted">${state.shadows.filter(s=>s.tamed).length} из ${state.shadows.length} приручено</span></div>
-  <p class="muted">Каждый страх живёт здесь как тень. Честные ответы и смелые дела делают её меньше, пока она не станет питомцем.</p>
+  <p class="muted">Тень — это твоя тревога или страх, высказанные словами. Пока у страха нет имени, он кажется огромным. Честные ответы и смелые дела делают тень меньше, пока она не станет питомцем.</p>
   <div class="sgrid">
   ${state.shadows.map(sh=>sh.tamed?`<div class="scard">${mini(sh,true)}<span class="name">«${esc(sh.pet)}»</span><span class="tag">Был тенью «${esc(sh.name)}»</span></div>`
     :`<div class="scard">${mini(sh,false)}<span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}<button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join('')}
@@ -587,7 +605,7 @@ function sheetView(){
     <button class="btn big ghost" data-action="reset" style="${resetArmed?'border-color:var(--danger);color:var(--danger)':''}">${resetArmed?'Нажми ещё раз, чтобы сбросить всё':'Сбросить прогресс'}</button>
     <button class="btn ghost" data-action="close-sheet">Закрыть</button></div></div>`;
   return `<div class="sheet-wrap" data-action="close-sheet-bg"><form class="sheet" data-form="create" role="dialog" aria-modal="true" aria-labelledby="sh2" novalidate>
-    <h2 id="sh2">Новая тень</h2><p class="muted">Назови страх так, как он звучит у тебя в голове. Можно с юмором.</p>
+    <h2 id="sh2">Новая тень</h2><p class="muted">Назови тревогу так, как она звучит у тебя в голове: «Не справлюсь», «Меня осудят», «Опоздаю». Можно с юмором.</p>
     <div class="field"><label for="cname">Имя тени</label><input id="cname" maxlength="28" autocomplete="off" placeholder="Например: Страх выступлений"></div>
     <p class="label">Как она выглядит</p>
     <div class="looks">${Object.entries(LOOKS).map(([k,l])=>`<button type="button" class="look" data-action="look" data-arg="${k}" aria-pressed="${sheet.look===k}">${mini({kind:'custom',look:k},false)}${l.label}</button>`).join('')}</div>
@@ -612,11 +630,37 @@ function tameView(){
   </section>`;
 }
 
+const INTRO=[
+  {art:'shadow',title:'Тени — это твои тревоги',text:'Каждая тень — это страх или тревожная мысль, сказанная словами: «меня уволят», «денег не хватит», «я бездельничаю». Пока у страха нет имени, он кажется огромным. Когда имя есть, с ним можно поговорить.'},
+  {art:'meet',title:'Встреча с тенью',text:'Тень задаёт трудные вопросы, а ты отвечаешь честно и с опорой на факты. Каждый такой ответ делает её слабее. Ответы вроде «всё пропало» — это голос самой тени, они почти не помогают.'},
+  {art:'pet',title:'Из тени — в питомца',text:'Когда сила тени падает до нуля, она становится питомцем и поселяется в твоём саду. Страх не исчезает, а начинает помогать.'},
+  {art:'garden',title:'Сад, свет и новый день',text:'За честные ответы, смелые дела и хорошие вещи дня ты получаешь свет. Свет растит сад навсегда. А каждый новый день начинается заново: утром выбираешь погоду, днём ждут смелые дела, вечером зажигаешь фонари.',note:'«Тени» помогают тренировать привычку спокойно смотреть на тревогу, но не заменяют помощь специалиста, если тебе очень тяжело.'}
+];
+function introView(){
+  const s=INTRO[intro], last=intro===INTRO.length-1, demo={kind:'fired'};
+  const box=inner=>`<svg viewBox="-5 -14 150 164" aria-hidden="true">${inner}</svg>`;
+  const arrow='<svg viewBox="0 0 34 20" aria-hidden="true" style="height:22px;width:34px;flex-shrink:0"><path d="M2 10 L28 10 M20 3 L30 10 L20 17" stroke="#FFC65C" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const art={
+    shadow:box(shadowArt(demo)),
+    meet:`<svg viewBox="0 0 160 192" aria-hidden="true" style="height:70%">${heroArt(1.2)}</svg>${box(shadowArt(demo))}`,
+    pet:`<div style="height:65%;display:flex;align-items:center">${box(shadowArt(demo))}</div>${arrow}<div style="height:65%;display:flex;align-items:center">${box(petArt(demo))}</div>`,
+    garden:`<div class="garden-mini">${gardenSVG()}</div>`
+  }[s.art];
+  return `<section class="intro" role="dialog" aria-modal="true" aria-labelledby="ih">
+    <button class="skip" data-action="intro-skip">${state.seenIntro?'Закрыть':'Пропустить'}</button>
+    <div class="intro-art">${art}</div>
+    <div class="dots" aria-label="Шаг ${intro+1} из ${INTRO.length}">${INTRO.map((_,i)=>`<span class="${i===intro?'on':''}"></span>`).join('')}</div>
+    <h2 id="ih">${s.title}</h2>
+    <p>${s.text}</p>${s.note?`<p class="note">${s.note}</p>`:''}
+    <div class="intro-nav">${intro>0?'<button class="btn ghost" data-action="intro-prev">Назад</button>':''}<button class="btn" data-action="${last?'intro-done':'intro-next'}">${last?(state.seenIntro?'Понятно':'Начать'):'Дальше'}</button></div>
+  </section>`;
+}
+
 function screenBody(){return {garden:gardenScreen,shadows:shadowsScreen,tasks:tasksScreen,journal:journalScreen}[state.screen]()}
 
 function render(keepScroll=true){
   const old=document.getElementById('screen'), top=old&&keepScroll?old.scrollTop:0;
-  document.getElementById('view').innerHTML=header()+`<main class="screen" id="screen">${screenBody()}</main>`+nav()+(enc?encounterView():'')+(sheet?sheetView():'')+(tameShow?tameView():'');
+  document.getElementById('view').innerHTML=header()+`<main class="screen" id="screen">${screenBody()}</main>`+nav()+(enc?encounterView():'')+(sheet?sheetView():'')+(tameShow?tameView():'')+(intro!==null?introView():'');
   const scr=document.getElementById('screen'); if(scr) scr.scrollTop=top;
   if(focusNext){const el=document.querySelector(focusNext); if(el) el.focus({preventScroll:true}); focusNext=null}
 }
@@ -624,6 +668,10 @@ function render(keepScroll=true){
 /* ---------- Mechanics ---------- */
 function tame(sh){sh.tamed=true;sh.strength=0;state.light+=5;tameShow=sh.id;focusNext='.tame .btn'}
 function hurt(sh,d){sh.strength=Math.max(0,sh.strength-d)}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+function newDay(){state.day++;state.weather=null;state.weatherBonus=false;state.evening=false;state.tasksDone={}}
+function checkDay(){const t=todayStr();if(!state.lastDate){state.lastDate=t;save();return false}
+  if(state.lastDate!==t){newDay();state.lastDate=t;save();return true}return false}
 
 const actions={
   nav(id){state.screen=id;enc=null;save();render(false)},
@@ -645,9 +693,14 @@ const actions={
   look(k,b){sheet.look=k;document.querySelectorAll('.look').forEach(x=>x.setAttribute('aria-pressed',x.dataset.arg===k))},
   'close-sheet'(){sheet=null;render()},
   'close-sheet-bg'(a,b,e){if(e.target===b){sheet=null;render()}},
-  'new-day'(){state.day++;state.weather=null;state.weatherBonus=false;state.evening=false;state.tasksDone={};sheet=null;state.screen='garden';save();render(false);toast(`Утро. День ${state.day}`)},
+  'new-day'(){newDay();sheet=null;state.screen='garden';save();render(false);toast(`Утро. День ${state.day}`)},
   reset(){if(!resetArmed){resetArmed=true;render();return}state=fresh();sheet=null;enc=null;tameShow=null;resetArmed=false;save();render(false);toast('Прогресс сброшен')},
-  'close-tame'(){tameShow=null;state.screen='garden';render(false)}
+  'close-tame'(){tameShow=null;state.screen='garden';render(false)},
+  'open-help'(){intro=0;focusNext='.intro .intro-nav .btn';render()},
+  'intro-next'(){intro++;focusNext='.intro .intro-nav .btn:last-child';render()},
+  'intro-prev'(){intro--;focusNext='.intro .intro-nav .btn:last-child';render()},
+  'intro-skip'(){intro=null;state.seenIntro=true;save();render()},
+  'intro-done'(){intro=null;state.seenIntro=true;save();render()}
 };
 function respond(sh,d,r){hurt(sh,d);enc.phase='reply';enc.reply=r;enc.delta=d;enc.weak=d<10;if(!enc.weak)state.light+=1;focusNext='.enc-card .btn';save();render()}
 
@@ -666,9 +719,17 @@ const forms={
 const root=document.getElementById('app');
 root.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b||!root.contains(b))return;const fn=actions[b.dataset.action];if(fn)fn(b.dataset.arg,b,e)});
 root.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();forms[f.dataset.form]?.(f)});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tameShow)actions['close-tame']();else if(sheet)actions['close-sheet']();else if(enc)actions['close-enc']()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(intro!==null)actions['intro-skip']();else if(tameShow)actions['close-tame']();else if(sheet)actions['close-sheet']();else if(enc)actions['close-enc']()});
 
-function boot(data){state=(data&&data.state&&data.state.v===1)?data.state:load();render(false)}
+const NEWDAY_MSG='Новый день: погода, дела и фонари обновились';
+function boot(data){
+  state=(data&&data.state&&data.state.v===1)?data.state:load();
+  const changed=checkDay();
+  if(!state.seenIntro){intro=0;focusNext='.intro .intro-nav .btn'}
+  render(false);
+  if(changed)toast(NEWDAY_MSG);
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state&&checkDay()){enc=null;render(false);toast(NEWDAY_MSG)}});
 if(window.claude?.hot?.snapshot) window.claude.hot.snapshot(()=>({state}));
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 })();
