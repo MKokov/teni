@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1B1830">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Тени">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Тени — прототип</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
@@ -187,6 +195,25 @@ p{margin:0}
 .dots span.on{background:var(--lamp);width:22px}
 .intro-nav{margin-top:auto;display:flex;gap:10px;width:100%;max-width:330px}
 .intro-nav .btn{flex:1;min-height:52px;font-size:16px}
+.daybar{display:flex;gap:6px;padding:0 16px 10px}
+.daybar span{flex:1;text-align:center;font-size:11px;font-weight:800;padding:5px 2px;border-radius:999px;background:var(--panel);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.daybar span.ok{background:#264A40;color:var(--mint);border-color:#2F6152}
+.wcompact .wicon{width:44px;height:44px;border-radius:14px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--lamp-soft);flex-shrink:0}
+.wcompact .muted{font-size:13px}
+.card.glow{border-color:var(--lamp);box-shadow:0 0 0 1px var(--lamp),0 10px 30px rgba(255,198,92,.15)}
+.linkbtn{background:none;border:none;color:var(--muted);font-weight:800;font-size:13px;min-height:36px;text-decoration:underline;text-underline-offset:3px}
+.presets{display:flex;flex-direction:column;gap:8px}
+.preset{display:flex;align-items:center;gap:10px;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:16px;padding:6px 12px;min-height:56px}
+.preset svg{width:40px;height:44px;flex-shrink:0}
+.preset span{display:flex;flex-direction:column}
+.preset small{color:var(--muted);font-weight:700;font-size:12px}
+.preset[disabled]{opacity:.45;cursor:default}
+.sheet{max-height:88%;overflow-y:auto}
+.group{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+form.group{border-top:none;padding-top:0}
+.code{width:100%;min-height:70px;border-radius:14px;border:1px solid var(--line);background:var(--night);color:var(--ink);padding:10px;font-size:12px;font-family:ui-monospace,Menlo,monospace;word-break:break-all;resize:vertical}
+.btn.ghost[disabled]{opacity:.55}
+.orbfly{position:absolute;z-index:60;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#FFF3C4 0,#FFC65C 55%,rgba(255,198,92,0) 72%);pointer-events:none}
 .toast{position:absolute;left:50%;top:14px;z-index:50;transform:translate(-50%,-220%);background:var(--lamp);color:var(--lamp-ink);font-weight:800;font-size:14px;padding:10px 16px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .3s ease;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
 .toast.show{transform:translate(-50%,0)}
 
@@ -341,35 +368,81 @@ const STEPS={
       ['Буду просто переживать',3,'Отлично, корми меня тревогой!']]}
   ]
 };
-const TASKS=[
-  {id:'t1',text:'Запиши три своих рабочих успеха за месяц',shadow:'fired',light:2},
-  {id:'t2',text:'Отложи любую сумму в подушку',shadow:'money',light:2},
-  {id:'t3',text:'Скажи затейнику: «Спасибо, программа идёт по плану»',shadow:'host',light:2},
-  {id:'t4',text:'15 минут на дело, которое ведёт к твоей мечте',shadow:null,light:3}
+const PRESETS={
+  fired:{name:'Увольнение',pet:'Опыт',strength:80,hint:'«Меня уволят»',line:'Тебя скоро уволят. Ты же ничего не делаешь!',task:'Запиши три своих рабочих успеха за месяц'},
+  money:{name:'Пустой кошелёк',pet:'Запас',strength:60,hint:'«Денег не хватит»',line:'А вдруг денег не хватит? Что тогда?',task:'Отложи любую сумму в подушку'},
+  host:{name:'Массовик-затейник',pet:'Помощник',strength:70,hint:'«Я бездельничаю»',line:'Бездельничаешь! Придёт час расплаты!',task:'Скажи затейнику: «Спасибо, программа идёт по плану»'}
+};
+const CUSTOM_TASKS=[
+  'Сделай один маленький шаг навстречу тому, чего боишься',
+  'Найди один факт, который спорит с этой тревогой',
+  'Расскажи о своей тревоге близкому человеку',
+  'Запиши, что сделаешь, если страх всё-таки сбудется'
 ];
+const GENERIC_TASKS=[
+  {id:'g-dream',text:'15 минут на дело, которое ведёт к твоей мечте',light:3},
+  {id:'g-walk',text:'10 минут прогулки без телефона',light:2}
+];
+const ANSWER_FACTOR=.5; // одна встреча в день: тень приручается за несколько дней
 const DEFAULT={
   v:1,light:0,day:1,weather:null,weatherBonus:false,evening:false,lanterns:0,seenIntro:false,lastDate:null,screen:'garden',tasksDone:{},
-  shadows:[
-    {id:'fired',kind:'fired',name:'Увольнение',pet:'Опыт',strength:80,tamed:false,line:'Тебя скоро уволят. Ты же ничего не делаешь!'},
-    {id:'money',kind:'money',name:'Пустой кошелёк',pet:'Запас',strength:60,tamed:false,line:'А вдруг денег не хватит? Что тогда?'},
-    {id:'host',kind:'host',name:'Массовик-затейник',pet:'Помощник',strength:70,tamed:false,line:'Бездельничаешь! Придёт час расплаты!'}
-  ],
+  met:{},dayBonus:0,sound:true,
+  shadows:[],
   journal:[]
 };
 
 /* ---------- State ---------- */
-let state, enc=null, sheet=null, tameShow=null, resetArmed=false, focusNext=null, intro=null;
+let state, enc=null, sheet=null, tameShow=null, resetArmed=false, focusNext=null, intro=null, weatherOpen=false;
+let pendingFly=0, lastPt=null, actx=null, installEvt=null;
 const fresh=()=>JSON.parse(JSON.stringify(DEFAULT));
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)return s}catch(e){}return fresh()}
+const upgrade=s=>Object.assign(fresh(),s);
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.v===1)return upgrade(s)}catch(e){}return fresh()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const getSh=id=>state.shadows.find(s=>s.id===id);
 const level=l=>Math.floor(l/10)+1;
 const steps=sh=>STEPS[sh.kind]||STEPS.custom;
+const hash=s=>[...String(s)].reduce((a,c)=>a+c.charCodeAt(0),0);
+const canMeet=sh=>state.met[sh.id]!==state.day;
+const partOfDay=()=>{const h=new Date().getHours();return h<12?'morning':h<18?'day':'evening'};
+function todayTasks(){
+  return state.shadows.filter(s=>!s.tamed).map(s=>({id:'s-'+s.id,shadow:s.id,light:2,
+    text:PRESETS[s.kind]?PRESETS[s.kind].task:CUSTOM_TASKS[(hash(s.id)+state.day)%CUSTOM_TASKS.length]})).concat(GENERIC_TASKS);
+}
+function makeShadow(kind,name,look){
+  const p=PRESETS[kind];
+  return p?{id:kind+'-'+Date.now(),kind,name:p.name,pet:p.pet,strength:p.strength,tamed:false,line:p.line}
+    :{id:'c'+Date.now(),kind:'custom',look,name,pet:'Смелость',strength:70,tamed:false,line:`Я — твоя тень «${name}». Ты со мной не справишься!`};
+}
 
+/* ---------- Feel: toast, light, sound, vibration ---------- */
 let toastTimer;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200)}
-function addLight(n,msg){const before=level(state.light);state.light+=n;const up=level(state.light)>before;toast(up?`Новый уровень сада: ${level(state.light)}!`:(msg||`+${n} света`))}
+function sfx(type){
+  if(!state.sound)return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const notes={light:[880,1320],level:[660,880,1100,1320],tame:[523,659,784,1046,1318],tap:[520]}[type];
+    notes.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain(),t0=actx.currentTime+i*.09;
+      o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(type==='tap'?.05:.1,t0+.01);g.gain.exponentialRampToValueAtTime(.001,t0+.35);
+      o.connect(g).connect(actx.destination);o.start(t0);o.stop(t0+.4)});
+  }catch(e){}
+}
+function buzz(p){if(!state.sound)return;try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+function gain(n){const before=level(state.light);state.light+=n;pendingFly+=n;sfx('light');
+  const up=level(state.light)>before;if(up){toast(`Новый уровень сада: ${level(state.light)}!`);setTimeout(()=>sfx('level'),250)}return up}
+function addLight(n,msg){if(!gain(n))toast(msg||`+${n} света`)}
+function flyLight(){
+  const n=pendingFly;pendingFly=0;
+  if(!n||!lastPt||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const app=document.getElementById('app'),ar=app.getBoundingClientRect(),chip=document.getElementById('lightchip');if(!chip)return;
+  const c=chip.getBoundingClientRect(),dx=c.left+c.width/2-lastPt.x,dy=c.top+c.height/2-lastPt.y;
+  for(let i=0;i<Math.min(5,n);i++){
+    const el=document.createElement('div');el.className='orbfly';el.style.left=(lastPt.x-ar.left-8)+'px';el.style.top=(lastPt.y-ar.top-8)+'px';app.appendChild(el);
+    const a=el.animate([{transform:'translate(0,0) scale(.6)',opacity:0},{transform:`translate(${dx*.4+(i-2)*16}px,${dy*.4-36}px) scale(1.2)`,opacity:1,offset:.45},{transform:`translate(${dx}px,${dy}px) scale(.5)`,opacity:.8}],{duration:760,delay:i*70,easing:'ease-in-out',fill:'forwards'});
+    a.onfinish=()=>{el.remove();const ch=document.getElementById('lightchip');ch&&ch.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:260})};
+  }
+}
 
 /* ---------- Art ---------- */
 const BODY='M70 14 C105 14 124 46 124 80 C124 108 120 126 112 140 C106 132 100 142 92 136 C86 144 78 136 70 144 C62 136 54 144 48 136 C40 142 34 132 28 140 C20 126 16 108 16 80 C16 46 35 14 70 14 Z';
@@ -491,63 +564,100 @@ const ORB='<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><c
 const CHECK=c=>`<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>`;
 const strengthColor=v=>v>60?'var(--danger)':v>30?'var(--warn)':'var(--mint)';
 const strengthBar=v=>`<div class="strength"><div class="bar" role="img" aria-label="Сила тени ${v} процентов"><i style="width:${v}%;background:${strengthColor(v)}"></i></div><span>${v}%</span></div>`;
+const meetBtn=(sh,cls='btn')=>canMeet(sh)?`<button class="${cls}" data-action="meet" data-arg="${sh.id}">Встретить</button>`:`<button class="${cls} ghost" disabled title="С каждой тенью можно встретиться раз в день">Завтра</button>`;
+const wIcon=id=>`<svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WICON[id]}</svg>`;
+
+function dayStatus(){
+  return [
+    ['Погода',!!state.weather],
+    ['Встреча',Object.values(state.met).includes(state.day)],
+    ['Дело',Object.keys(state.tasksDone).length>0],
+    ['Фонари',state.evening]
+  ];
+}
 
 function header(){
   const lv=level(state.light), p=(state.light%10)*10;
   const wl=state.weather?WEATHER.find(w=>w.id===state.weather).label.toLowerCase():'погода не выбрана';
+  const ds=dayStatus();
   return `<header class="top">
     <div><p class="eyebrow">День ${state.day} · ${state.evening?'вечер':wl}</p><h1>Привет!</h1></div>
-    <div class="top-right"><span class="chip" aria-label="Света: ${state.light}">${ORB}${state.light}</span>
+    <div class="top-right"><span class="chip" id="lightchip" aria-label="Света: ${state.light}">${ORB}${state.light}</span>
     <button class="icon-btn" data-action="open-help" aria-label="Как играть"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4"/><circle cx="12" cy="17" r=".7" fill="currentColor"/></svg></button>
-    <button class="icon-btn" data-action="open-settings" aria-label="Настройки прототипа"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div>
+    <button class="icon-btn" data-action="open-settings" aria-label="Настройки"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></div>
   </header>
-  <div class="lvl"><span>Сад · ур. ${lv}</span><div class="bar" role="img" aria-label="До следующего уровня ${10-state.light%10} света"><i style="width:${p}%"></i></div><span>${state.light%10}/10</span></div>`;
+  <div class="lvl"><span>Сад · ур. ${lv}</span><div class="bar" role="img" aria-label="До следующего уровня ${10-state.light%10} света"><i style="width:${p}%"></i></div><span>${state.light%10}/10</span></div>
+  <div class="daybar" aria-label="Сегодня сделано ${ds.filter(d=>d[1]).length} из 4">${ds.map(([l,ok])=>`<span class="${ok?'ok':''}">${ok?'✓ ':''}${l}</span>`).join('')}</div>`;
 }
 
-function gardenScreen(){
-  const untamed=state.shadows.filter(s=>!s.tamed);
-  const nextTask=TASKS.find(t=>!state.tasksDone[t.id]&&(!t.shadow||!getSh(t.shadow)?.tamed))||TASKS.find(t=>!state.tasksDone[t.id]);
-  const wline=state.weather?WEATHER.find(w=>w.id===state.weather).line:'';
-  return `
-  <section class="card" aria-labelledby="wh">
+function weatherCard(){
+  const w=state.weather&&WEATHER.find(x=>x.id===state.weather);
+  if(w&&!weatherOpen) return `<section class="card wcompact" aria-label="Погода внутри">
+    <div class="row"><span class="wicon">${wIcon(w.id)}</span><div class="grow"><span class="name">Погода внутри: ${w.label.toLowerCase()}</span><span class="muted">${w.line}</span></div>
+    <button class="btn ghost" data-action="weather-open">Изменить</button></div></section>`;
+  return `<section class="card" aria-labelledby="wh">
     <div class="card-head"><h2 id="wh">Какая погода внутри?</h2>${state.weatherBonus?'':'<span class="muted">+1 свет</span>'}</div>
-    ${state.weather?'':'<p class="muted">Отметь, как ты сейчас. Любая погода нормальна: это просто честный взгляд на себя. Каждое утро погода выбирается заново.</p>'}
-    <div class="weather">${WEATHER.map(w=>`<button class="wbtn" data-action="weather" data-arg="${w.id}" aria-pressed="${state.weather===w.id}"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${WICON[w.id]}</svg>${w.label}</button>`).join('')}</div>
-    ${wline?`<p class="mood">${wline}</p>`:''}
-  </section>
-  <div class="garden">${gardenSVG()}<span class="gchip tl">Питомцев: ${state.shadows.filter(s=>s.tamed).length}</span><span class="gchip br">Фонарей: ${state.lanterns}</span></div>
-  <p class="muted" style="margin-top:-6px;text-align:center">Свет растит сад навсегда. Погода, смелые дела и вечерние фонари обновляются каждый день.</p>
-  <section class="card" aria-labelledby="th">
-    <div class="card-head"><h2 id="th">Тени рядом</h2><span class="muted">${untamed.length}</span></div>
-    <p class="muted">Тень — это тревога или страх, сказанные словами. Встреться с ней, чтобы она стала слабее.</p>
-    ${untamed.length?untamed.map(sh=>`<div class="row"><div class="mini">${mini(sh,false)}</div><div class="grow"><span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}</div><button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join(''):'<p class="muted">Все тени приручены. Если что-то снова тревожит, создай новую тень в разделе «Тени».</p>'}
-  </section>
-  ${nextTask&&!state.tasksDone[nextTask.id]?`<section class="task-card" aria-label="Смелое дело дня">
-    <div class="badge">${CHECK('#7A4E0E')}</div>
-    <div class="grow" style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><p class="label">Смелое дело дня</p><p class="t">${nextTask.text}</p></div>
-    <button class="btn" data-action="task" data-arg="${nextTask.id}">Сделал</button></section>`:`<section class="card"><p class="label">Смелые дела</p><p class="muted">На сегодня всё сделано. Тени это заметили.</p></section>`}
-  <section class="card">
-    <p class="label">Вечер</p>
-    ${state.evening?`<p class="lit"><span class="dot" aria-hidden="true"></span>Фонари сегодня зажжены. Сад на закате.</p>`:`<p style="font-weight:700">Запиши три хорошие вещи за день и зажги фонари в саду.</p><button class="btn ghost" data-action="nav" data-arg="journal">Открыть дневник</button>`}
+    <p class="muted">Отметь, как ты сейчас. Любая погода нормальна: это просто честный взгляд на себя. Каждое утро погода выбирается заново.</p>
+    <div class="weather">${WEATHER.map(x=>`<button class="wbtn" data-action="weather" data-arg="${x.id}" aria-pressed="${state.weather===x.id}">${wIcon(x.id)}${x.label}</button>`).join('')}</div>
   </section>`;
+}
+function gardenBlock(){
+  return `<div class="garden">${gardenSVG()}<span class="gchip tl">Питомцев: ${state.shadows.filter(s=>s.tamed).length}</span><span class="gchip br">Фонарей: ${state.lanterns}</span></div>
+  <p class="muted" style="margin-top:-6px;text-align:center">Свет растит сад навсегда. Погода, смелые дела и вечерние фонари обновляются каждый день.</p>`;
+}
+function shadowsCard(){
+  const untamed=state.shadows.filter(s=>!s.tamed);
+  if(!state.shadows.length) return `<section class="card" aria-labelledby="th"><h2 id="th" style="font-size:18px;color:#fff">Теней пока нет</h2>
+    <p class="muted">Тень — это тревога или страх, сказанные словами. Назови то, что тебя беспокоит, и тень появится у края сада.</p>
+    <button class="btn" data-action="open-create">Создать первую тень</button></section>`;
+  return `<section class="card" aria-labelledby="th">
+    <div class="card-head"><h2 id="th">Тени рядом</h2><span class="muted">${untamed.length}</span></div>
+    <p class="muted">Тень — это тревога или страх, сказанные словами. С каждой тенью можно встретиться один раз в день.</p>
+    ${untamed.length?untamed.map(sh=>`<div class="row"><div class="mini">${mini(sh,false)}</div><div class="grow"><span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}</div>${meetBtn(sh)}</div>`).join(''):'<p class="muted">Все тени приручены. Если что-то снова тревожит, создай новую тень в разделе «Тени».</p>'}
+  </section>`;
+}
+function taskCard(){
+  const next=todayTasks().find(t=>!state.tasksDone[t.id]);
+  if(!next) return `<section class="card"><p class="label">Смелые дела</p><p class="muted">На сегодня всё сделано. Тени это заметили.</p></section>`;
+  return `<section class="task-card" aria-label="Смелое дело дня">
+    <div class="badge">${CHECK('#7A4E0E')}</div>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><p class="label">Смелое дело дня</p><p class="t">${next.text}</p></div>
+    <button class="btn" data-action="task" data-arg="${next.id}">Сделал</button></section>`;
+}
+function eveningCard(){
+  const now=partOfDay()==='evening';
+  return `<section class="card${now&&!state.evening?' glow':''}">
+    <p class="label">Вечер</p>
+    ${state.evening?`<p class="lit"><span class="dot" aria-hidden="true"></span>Фонари сегодня зажжены. Сад на закате.</p>`
+      :`<p style="font-weight:700">${now?'Вечер наступил. Запиши три хорошие вещи за день и зажги фонари в саду.':'Вечером запиши три хорошие вещи за день и зажги фонари в саду.'}</p><button class="btn ${now?'':'ghost'}" data-action="nav" data-arg="journal">Открыть дневник</button>`}
+  </section>`;
+}
+function gardenScreen(){
+  const W=weatherCard(),G=gardenBlock(),S=shadowsCard(),T=taskCard(),E=eveningCard(),part=partOfDay();
+  let order;
+  if(!state.weather||weatherOpen) order=[W,G,S,T,E];
+  else if(part==='evening'&&!state.evening) order=[E,G,S,T,W];
+  else if(part==='day') order=[T,G,S,E,W];
+  else order=[G,S,T,E,W];
+  return order.join('');
 }
 
 function shadowsScreen(){
   return `<div class="section-title"><h2>Тени и питомцы</h2><span class="muted">${state.shadows.filter(s=>s.tamed).length} из ${state.shadows.length} приручено</span></div>
-  <p class="muted">Тень — это твоя тревога или страх, высказанные словами. Пока у страха нет имени, он кажется огромным. Честные ответы и смелые дела делают тень меньше, пока она не станет питомцем.</p>
+  <p class="muted">Тень — это твоя тревога или страх, высказанные словами. Пока у страха нет имени, он кажется огромным. Честные ответы и смелые дела делают тень меньше, пока она не станет питомцем. Встречаться с тенью можно раз в день.</p>
   <div class="sgrid">
-  ${state.shadows.map(sh=>sh.tamed?`<div class="scard">${mini(sh,true)}<span class="name">«${esc(sh.pet)}»</span><span class="tag">Был тенью «${esc(sh.name)}»</span></div>`
-    :`<div class="scard">${mini(sh,false)}<span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}<button class="btn" data-action="meet" data-arg="${sh.id}">Встретить</button></div>`).join('')}
-  <button class="add" data-action="open-create"><svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Создать свою тень</button>
+  ${state.shadows.map(sh=>sh.tamed?`<div class="scard">${mini(sh,true)}<span class="name">«${esc(sh.pet)}»</span><span class="tag">Был тенью «${esc(sh.name)}»</span><button class="linkbtn" data-action="open-edit" data-arg="${sh.id}">Изменить</button></div>`
+    :`<div class="scard">${mini(sh,false)}<span class="name">${esc(sh.name)}</span>${strengthBar(sh.strength)}${meetBtn(sh)}<button class="linkbtn" data-action="open-edit" data-arg="${sh.id}">Изменить</button></div>`).join('')}
+  <button class="add" data-action="open-create"><svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Создать тень</button>
   </div>`;
 }
 
 function tasksScreen(){
-  const done=TASKS.filter(t=>state.tasksDone[t.id]).length;
-  return `<div class="section-title"><h2>Смелые дела</h2><span class="muted">${done} из ${TASKS.length}</span></div>
-  <p class="muted">Маленькие реальные действия. Каждое даёт свет и ослабляет связанную тень на 20%.</p>
-  ${TASKS.map(t=>{const sh=t.shadow&&getSh(t.shadow);const d=!!state.tasksDone[t.id];
-    const rw=`+${t.light} света`+(sh&&!sh.tamed?` · тень «${esc(sh.name)}» −20%`:'');
+  const list=todayTasks(), done=list.filter(t=>state.tasksDone[t.id]).length;
+  return `<div class="section-title"><h2>Смелые дела</h2><span class="muted">${done} из ${list.length}</span></div>
+  <p class="muted">Маленькие реальные действия на сегодня. Каждое даёт свет, а дело тени ослабляет её на 20%. Завтра будет новый список.</p>
+  ${list.map(t=>{const sh=t.shadow&&getSh(t.shadow);const d=!!state.tasksDone[t.id];
+    const rw=`+${t.light} света`+(sh?` · тень «${esc(sh.name)}» −20%`:'');
     return `<button class="task${d?' done':''}" data-action="task" data-arg="${t.id}" aria-pressed="${d}"><span class="check">${d?CHECK('#2A1F0E'):''}</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="tt">${t.text}</span><span class="rw">${d?'Сделано':rw}</span></span></button>`}).join('')}`;
 }
 
@@ -562,7 +672,7 @@ function journalScreen(){
     <button class="btn big" type="submit">Зажечь фонари · +3 света</button>
   </form>`}
   <section class="card"><p class="label">Прошлые записи</p>
-    ${state.journal.filter(j=>j.day!==state.day).map(j=>`<div class="entry"><span class="muted">${j.example?'Пример из разговора':'День '+j.day}</span><ul>${j.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')||'<p class="muted">Пока пусто.</p>'}
+    ${state.journal.filter(j=>j.day!==state.day).map(j=>`<div class="entry"><span class="muted">${j.example?'Пример':'День '+j.day}</span><ul>${j.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')||'<p class="muted">Пока пусто.</p>'}
   </section>`;
 }
 
@@ -581,13 +691,13 @@ function encounterView(){
   if(enc.phase==='ask'){
     body=`<h2 id="eq">${cur.q}</h2>
     ${cur.o.map((o,i)=>`<button class="opt" data-action="answer" data-arg="${i}">${o[0]}</button>`).join('')}
-    <form class="own" data-form="own"><label class="sr" for="ownin" style="position:absolute;left:-9999px">Свой ответ</label><input id="ownin" autocomplete="off" maxlength="100" placeholder="Или ответь своими словами"><button class="btn" type="submit">Ответить</button></form>`;
+    <form class="own" data-form="own"><label for="ownin" style="position:absolute;left:-9999px">Свой ответ</label><input id="ownin" autocomplete="off" maxlength="100" placeholder="Или ответь своими словами"><button class="btn" type="submit">Ответить</button></form>`;
   } else if(enc.phase==='reply'){
     body=`<div class="delta"><span style="color:${enc.weak?'var(--danger)':'var(--mint)'}">Тень −${enc.delta}%</span>${enc.weak?'':'<span style="color:var(--lamp-soft)">+1 свет</span>'}</div>
     ${enc.weak?'<p class="hint">Это ответ самой тени, поэтому он почти её не ослабил. Попробуй опираться на факты: что у тебя уже есть и что ты можешь сделать.</p>':''}
     <button class="btn big" data-action="next">${sh.strength<=0?'Тень тает…':enc.step<2?'Следующий вопрос':'Завершить встречу'}</button>`;
   } else {
-    body=`<h2>Тень ослабла до ${sh.strength}%</h2><p class="muted">Сегодня ты задал ей все вопросы. Смелые дела в разделе «Дела» добьют её, а завтра можно встретиться снова.</p>
+    body=`<h2>Тень ослабла до ${sh.strength}%</h2><p class="muted">Следующая встреча с ней будет завтра. А смелые дела в разделе «Дела» можно сделать уже сегодня, они тоже ослабляют тень.</p>
     <div style="display:flex;gap:8px"><button class="btn" style="flex:1" data-action="nav" data-arg="tasks">К делам</button><button class="btn ghost" style="flex:1" data-action="close-enc">В сад</button></div>`;
   }
   return `<section class="overlay" role="dialog" aria-modal="true" aria-label="Встреча с тенью «${esc(sh.name)}»">
@@ -599,20 +709,48 @@ function encounterView(){
 }
 
 function sheetView(){
-  if(sheet.type==='settings') return `<div class="sheet-wrap" data-action="close-sheet-bg"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh1">
-    <h2 id="sh1">Прототип</h2><p class="muted">Кнопки для проверки механики. Прогресс хранится только в этом браузере.</p>
-    <button class="btn big" data-action="new-day">Начать новый день</button>
-    <button class="btn big ghost" data-action="reset" style="${resetArmed?'border-color:var(--danger);color:var(--danger)':''}">${resetArmed?'Нажми ещё раз, чтобы сбросить всё':'Сбросить прогресс'}</button>
-    <button class="btn ghost" data-action="close-sheet">Закрыть</button></div></div>`;
-  return `<div class="sheet-wrap" data-action="close-sheet-bg"><form class="sheet" data-form="create" role="dialog" aria-modal="true" aria-labelledby="sh2" novalidate>
-    <h2 id="sh2">Новая тень</h2><p class="muted">Назови тревогу так, как она звучит у тебя в голове: «Не справлюсь», «Меня осудят», «Опоздаю». Можно с юмором.</p>
+  const wrap=inner=>`<div class="sheet-wrap" data-action="close-sheet-bg">${inner}</div>`;
+  if(sheet.type==='settings') return wrap(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh1">
+    <h2 id="sh1">Настройки</h2>
+    <button class="btn big ghost" data-action="toggle-sound" aria-pressed="${state.sound}">Звук и вибрация: ${state.sound?'включены':'выключены'}</button>
+    <div class="group"><p class="label">Игра на экране телефона</p>
+      ${installEvt?'<button class="btn big" data-action="install">Установить как приложение</button>'
+      :'<p class="muted">Открой меню браузера и выбери «На экран „Домой“» или «Установить приложение». Игра откроется на весь экран, как обычное приложение.</p>'}</div>
+    <div class="group"><p class="label">Перенос прогресса</p>
+      <p class="muted">Прогресс хранится в этом браузере. Скопируй код и вставь его на другом телефоне, чтобы продолжить там.</p>
+      <button class="btn ghost" data-action="export-code">Скопировать код прогресса</button>
+      ${sheet.code?`<label for="ecode" class="muted">Твой код</label><textarea id="ecode" class="code" readonly>${sheet.code}</textarea>`:''}
+      <form data-form="import" class="group" novalidate><label for="icode" class="muted">Вставь код с другого устройства</label><textarea id="icode" class="code" placeholder="Код прогресса"></textarea><p class="err" id="ierr" role="alert"></p><button class="btn ghost" type="submit">Восстановить прогресс</button></form>
+    </div>
+    <div class="group"><p class="label">Для проверки</p>
+      <button class="btn ghost" data-action="new-day">Начать новый день сейчас</button>
+      <button class="btn ghost" data-action="reset" style="${resetArmed?'border-color:var(--danger);color:var(--danger)':''}">${resetArmed?'Нажми ещё раз, чтобы стереть всё':'Сбросить прогресс'}</button></div>
+    <button class="btn big" data-action="close-sheet">Закрыть</button></div>`);
+  if(sheet.type==='edit'){
+    const sh=getSh(sheet.id);
+    return wrap(`<form class="sheet" data-form="edit" role="dialog" aria-modal="true" aria-labelledby="sh3" novalidate>
+      <h2 id="sh3">${sh.tamed?'Питомец':'Тень'} «${esc(sh.tamed?sh.pet:sh.name)}»</h2>
+      <div class="field"><label for="ename">Имя тени</label><input id="ename" maxlength="28" autocomplete="off" value="${esc(sh.name)}"></div>
+      ${sh.tamed?`<div class="field"><label for="epet">Имя питомца</label><input id="epet" maxlength="28" autocomplete="off" value="${esc(sh.pet)}"></div>`:''}
+      <p class="err" id="eerr" role="alert"></p>
+      <button class="btn big" type="submit">Сохранить</button>
+      <button class="btn ghost" type="button" data-action="delete-shadow" style="${sheet.armed?'border-color:var(--danger);color:var(--danger)':''}">${sheet.armed?'Нажми ещё раз, чтобы удалить':'Удалить'}</button>
+      <button class="btn ghost" type="button" data-action="close-sheet">Отмена</button>
+    </form>`);
+  }
+  return wrap(`<form class="sheet" data-form="create" role="dialog" aria-modal="true" aria-labelledby="sh2" novalidate>
+    <h2 id="sh2">${sheet.first?'Твоя первая тень':'Новая тень'}</h2>
+    <p class="muted">Что тебя тревожит? Назови это так, как оно звучит у тебя в голове: «Не справлюсь», «Меня осудят», «Опоздаю». Можно с юмором.</p>
     <div class="field"><label for="cname">Имя тени</label><input id="cname" maxlength="28" autocomplete="off" placeholder="Например: Страх выступлений"></div>
     <p class="label">Как она выглядит</p>
     <div class="looks">${Object.entries(LOOKS).map(([k,l])=>`<button type="button" class="look" data-action="look" data-arg="${k}" aria-pressed="${sheet.look===k}">${mini({kind:'custom',look:k},false)}${l.label}</button>`).join('')}</div>
     <p class="err" id="cerr" role="alert"></p>
     <button class="btn big" type="submit">Создать тень</button>
-    <button class="btn ghost" type="button" data-action="close-sheet">Отмена</button>
-  </form></div>`;
+    <p class="label" style="margin-top:4px">Или возьми готовую</p>
+    <div class="presets">${Object.entries(PRESETS).map(([k,p])=>{const has=state.shadows.some(s=>s.kind===k);
+      return `<button type="button" class="preset" data-action="preset" data-arg="${k}" ${has?'disabled':''}>${mini({kind:k},false)}<span><b>${p.name}</b><small>${has?'Уже есть':p.hint}</small></span></button>`}).join('')}</div>
+    <button class="btn ghost" type="button" data-action="close-sheet">${sheet.first?'Позже':'Отмена'}</button>
+  </form>`);
 }
 
 function tameView(){
@@ -624,7 +762,7 @@ function tameView(){
       <svg viewBox="0 0 220 230" class="t-spark" aria-hidden="true">${SPARK(30,40,10,'#FFE0A3')}${SPARK(190,60,8,'#8EE3C1')}${SPARK(200,170,11,'#FFC65C')}${SPARK(24,180,7,'#B9A4FF')}${SPARK(110,8,6,'#FFE0A3')}</svg>
     </div>
     <h2 id="tm">Тень приручена!</h2>
-    <p>«${esc(sh.name)}» теперь твой питомец «${esc(sh.pet)}». Он поселился в саду.</p>
+    <p>«${esc(sh.name)}» теперь твой питомец «${esc(sh.pet)}». Он поселился в саду. Имя питомцу можно поменять в разделе «Тени».</p>
     <p class="reward">+5 света</p>
     <button class="btn big" style="max-width:300px" data-action="close-tame">В сад</button>
   </section>`;
@@ -632,8 +770,8 @@ function tameView(){
 
 const INTRO=[
   {art:'shadow',title:'Тени — это твои тревоги',text:'Каждая тень — это страх или тревожная мысль, сказанная словами: «меня уволят», «денег не хватит», «я бездельничаю». Пока у страха нет имени, он кажется огромным. Когда имя есть, с ним можно поговорить.'},
-  {art:'meet',title:'Встреча с тенью',text:'Тень задаёт трудные вопросы, а ты отвечаешь честно и с опорой на факты. Каждый такой ответ делает её слабее. Ответы вроде «всё пропало» — это голос самой тени, они почти не помогают.'},
-  {art:'pet',title:'Из тени — в питомца',text:'Когда сила тени падает до нуля, она становится питомцем и поселяется в твоём саду. Страх не исчезает, а начинает помогать.'},
+  {art:'meet',title:'Встреча с тенью',text:'Раз в день тень задаёт тебе трудные вопросы, а ты отвечаешь честно и с опорой на факты. Каждый такой ответ делает её слабее. Ответы вроде «всё пропало» — это голос самой тени, они почти не помогают.'},
+  {art:'pet',title:'Из тени — в питомца',text:'Встречи и смелые дела за несколько дней ослабляют тень до нуля. Тогда она становится питомцем и поселяется в твоём саду. Страх не исчезает, а начинает помогать.'},
   {art:'garden',title:'Сад, свет и новый день',text:'За честные ответы, смелые дела и хорошие вещи дня ты получаешь свет. Свет растит сад навсегда. А каждый новый день начинается заново: утром выбираешь погоду, днём ждут смелые дела, вечером зажигаешь фонари.',note:'«Тени» помогают тренировать привычку спокойно смотреть на тревогу, но не заменяют помощь специалиста, если тебе очень тяжело.'}
 ];
 function introView(){
@@ -646,13 +784,14 @@ function introView(){
     pet:`<div style="height:65%;display:flex;align-items:center">${box(shadowArt(demo))}</div>${arrow}<div style="height:65%;display:flex;align-items:center">${box(petArt(demo))}</div>`,
     garden:`<div class="garden-mini">${gardenSVG()}</div>`
   }[s.art];
+  const lastLabel=!state.shadows.length?'Создать первую тень':(state.seenIntro?'Понятно':'Начать');
   return `<section class="intro" role="dialog" aria-modal="true" aria-labelledby="ih">
     <button class="skip" data-action="intro-skip">${state.seenIntro?'Закрыть':'Пропустить'}</button>
     <div class="intro-art">${art}</div>
     <div class="dots" aria-label="Шаг ${intro+1} из ${INTRO.length}">${INTRO.map((_,i)=>`<span class="${i===intro?'on':''}"></span>`).join('')}</div>
     <h2 id="ih">${s.title}</h2>
     <p>${s.text}</p>${s.note?`<p class="note">${s.note}</p>`:''}
-    <div class="intro-nav">${intro>0?'<button class="btn ghost" data-action="intro-prev">Назад</button>':''}<button class="btn" data-action="${last?'intro-done':'intro-next'}">${last?(state.seenIntro?'Понятно':'Начать'):'Дальше'}</button></div>
+    <div class="intro-nav">${intro>0?'<button class="btn ghost" data-action="intro-prev">Назад</button>':''}<button class="btn" data-action="${last?'intro-done':'intro-next'}">${last?lastLabel:'Дальше'}</button></div>
   </section>`;
 }
 
@@ -663,67 +802,99 @@ function render(keepScroll=true){
   document.getElementById('view').innerHTML=header()+`<main class="screen" id="screen">${screenBody()}</main>`+nav()+(enc?encounterView():'')+(sheet?sheetView():'')+(tameShow?tameView():'')+(intro!==null?introView():'');
   const scr=document.getElementById('screen'); if(scr) scr.scrollTop=top;
   if(focusNext){const el=document.querySelector(focusNext); if(el) el.focus({preventScroll:true}); focusNext=null}
+  if(pendingFly) requestAnimationFrame(flyLight);
 }
 
 /* ---------- Mechanics ---------- */
-function tame(sh){sh.tamed=true;sh.strength=0;state.light+=5;tameShow=sh.id;focusNext='.tame .btn'}
+function tame(sh){sh.tamed=true;sh.strength=0;gain(5);setTimeout(()=>sfx('tame'),900);buzz([20,40,90]);tameShow=sh.id;focusNext='.tame .btn'}
 function hurt(sh,d){sh.strength=Math.max(0,sh.strength-d)}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
-function newDay(){state.day++;state.weather=null;state.weatherBonus=false;state.evening=false;state.tasksDone={}}
+function newDay(){state.day++;state.weather=null;state.weatherBonus=false;state.evening=false;state.tasksDone={};weatherOpen=false}
 function checkDay(){const t=todayStr();if(!state.lastDate){state.lastDate=t;save();return false}
   if(state.lastDate!==t){newDay();state.lastDate=t;save();return true}return false}
+function checkDayComplete(){
+  if(state.dayBonus!==state.day&&dayStatus().every(d=>d[1])){state.dayBonus=state.day;gain(2);toast('Весь день пройден: +2 света')}
+}
+function commit(keepScroll=true){checkDayComplete();save();render(keepScroll)}
+const encodeState=()=>btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+const decodeState=c=>JSON.parse(decodeURIComponent(escape(atob(c.trim()))));
+function openFirstShadow(){if(!state.shadows.length){sheet={type:'create',look:'fog',first:true};focusNext='#cname'}}
 
 const actions={
   nav(id){state.screen=id;enc=null;save();render(false)},
-  weather(id){state.weather=id;if(!state.weatherBonus){state.weatherBonus=true;addLight(1,'+1 свет за честность с собой')}save();render()},
-  meet(id){enc={id,step:0,phase:'ask',reply:'',delta:0,weak:false};focusNext='.overlay .icon-btn';render()},
-  answer(i){const sh=getSh(enc.id),o=steps(sh)[enc.step].o[+i];respond(sh,o[1],o[2])},
+  weather(id){state.weather=id;weatherOpen=false;if(!state.weatherBonus){state.weatherBonus=true;addLight(1,'+1 свет за честность с собой')}commit()},
+  'weather-open'(){weatherOpen=true;render()},
+  meet(id){const sh=getSh(id);if(!sh||!canMeet(sh))return;enc={id,step:0,phase:'ask',reply:'',delta:0,weak:false};focusNext='.overlay .icon-btn';render()},
+  answer(i){const sh=getSh(enc.id),o=steps(sh)[enc.step].o[+i];respond(sh,Math.max(1,Math.round(o[1]*ANSWER_FACTOR)),o[2],o[1]<10)},
   next(){const sh=getSh(enc.id);
     if(sh.strength<=0){enc=null;tame(sh)}
     else if(enc.step<2){enc.step++;enc.phase='ask';focusNext='#eq'}
     else enc.phase='end';
-    save();render()},
+    commit()},
   'close-enc'(){enc=null;render()},
-  task(id){if(state.tasksDone[id])return;const t=TASKS.find(x=>x.id===id);state.tasksDone[id]=true;
-    const sh=t.shadow&&getSh(t.shadow);addLight(t.light);
+  task(id){if(state.tasksDone[id])return;const t=todayTasks().find(x=>x.id===id);if(!t)return;state.tasksDone[id]=true;
+    const sh=t.shadow&&getSh(t.shadow);addLight(t.light);buzz(15);
     if(sh&&!sh.tamed){hurt(sh,20);if(sh.strength<=0)tame(sh)}
-    save();render()},
+    commit()},
   'open-settings'(){sheet={type:'settings'};resetArmed=false;focusNext='.sheet .btn';render()},
   'open-create'(){sheet={type:'create',look:'fog'};focusNext='#cname';render()},
-  look(k,b){sheet.look=k;document.querySelectorAll('.look').forEach(x=>x.setAttribute('aria-pressed',x.dataset.arg===k))},
+  'open-edit'(id){sheet={type:'edit',id,armed:false};focusNext='#ename';render()},
+  look(k){sheet.look=k;document.querySelectorAll('.look').forEach(x=>x.setAttribute('aria-pressed',x.dataset.arg===k))},
+  preset(k){if(state.shadows.some(s=>s.kind===k))return;state.shadows.push(makeShadow(k));sheet=null;sfx('tap');save();render();toast('Тень появилась у края сада')},
+  'delete-shadow'(){if(!sheet.armed){sheet.armed=true;const b=document.querySelector('[data-action="delete-shadow"]');if(b){b.textContent='Нажми ещё раз, чтобы удалить';b.style.borderColor='var(--danger)';b.style.color='var(--danger)'}return}
+    state.shadows=state.shadows.filter(s=>s.id!==sheet.id);delete state.met[sheet.id];sheet=null;save();render();toast('Удалено')},
   'close-sheet'(){sheet=null;render()},
   'close-sheet-bg'(a,b,e){if(e.target===b){sheet=null;render()}},
+  'toggle-sound'(){state.sound=!state.sound;save();render();if(state.sound)sfx('tap')},
+  install(){if(!installEvt)return;installEvt.prompt();installEvt=null;render()},
+  'export-code'(){const code=encodeState();
+    try{navigator.clipboard.writeText(code).then(()=>toast('Код скопирован'),()=>toast('Скопируй код из поля ниже'))}catch(e){toast('Скопируй код из поля ниже')}
+    sheet.code=code;render();const ta=document.getElementById('ecode');if(ta){ta.focus();ta.select()}},
   'new-day'(){newDay();sheet=null;state.screen='garden';save();render(false);toast(`Утро. День ${state.day}`)},
-  reset(){if(!resetArmed){resetArmed=true;render();return}state=fresh();sheet=null;enc=null;tameShow=null;resetArmed=false;save();render(false);toast('Прогресс сброшен')},
+  reset(){if(!resetArmed){resetArmed=true;render();return}state=fresh();state.lastDate=todayStr();sheet=null;enc=null;tameShow=null;resetArmed=false;intro=0;save();render(false);toast('Прогресс сброшен')},
   'close-tame'(){tameShow=null;state.screen='garden';render(false)},
   'open-help'(){intro=0;focusNext='.intro .intro-nav .btn';render()},
   'intro-next'(){intro++;focusNext='.intro .intro-nav .btn:last-child';render()},
   'intro-prev'(){intro--;focusNext='.intro .intro-nav .btn:last-child';render()},
-  'intro-skip'(){intro=null;state.seenIntro=true;save();render()},
-  'intro-done'(){intro=null;state.seenIntro=true;save();render()}
+  'intro-skip'(){intro=null;state.seenIntro=true;openFirstShadow();save();render()},
+  'intro-done'(){intro=null;state.seenIntro=true;openFirstShadow();save();render()}
 };
-function respond(sh,d,r){hurt(sh,d);enc.phase='reply';enc.reply=r;enc.delta=d;enc.weak=d<10;if(!enc.weak)state.light+=1;focusNext='.enc-card .btn';save();render()}
+function respond(sh,d,r,weak){hurt(sh,d);enc.phase='reply';enc.reply=r;enc.delta=d;enc.weak=weak;state.met[sh.id]=state.day;
+  if(!weak)gain(1);else sfx('tap');focusNext='.enc-card .btn';commit()}
 
 const forms={
   own(f){const v=f.querySelector('#ownin').value.trim();if(v.length<3){f.querySelector('#ownin').focus();return}
-    respond(getSh(enc.id),25,'Своими словами? Это сильнее всего… Я тускнею.')},
+    respond(getSh(enc.id),Math.round(25*ANSWER_FACTOR),'Своими словами? Это сильнее всего… Я тускнею.',false)},
   journal(f){const vals=[1,2,3].map(n=>f.querySelector('#j'+n).value.trim());const empty=vals.findIndex(v=>!v);
     if(empty>-1){f.querySelector('#jerr').textContent='Заполни все три строки, даже мелочь считается.';f.querySelector('#j'+(empty+1)).focus();return}
     state.journal.unshift({day:state.day,items:vals});state.evening=true;state.lanterns++;
-    addLight(3,'Фонари зажжены: +3 света');save();render()},
+    addLight(3,'Фонари зажжены: +3 света');commit()},
   create(f){const name=f.querySelector('#cname').value.trim();if(!name){f.querySelector('#cerr').textContent='Дай тени имя, чтобы с ней можно было говорить.';f.querySelector('#cname').focus();return}
-    state.shadows.push({id:'c'+Date.now(),kind:'custom',look:sheet.look,name,pet:'Смелость',strength:70,tamed:false,line:`Я — твоя тень «${name}». Ты со мной не справишься!`});
-    sheet=null;state.screen='shadows';save();render();toast('Тень появилась у края сада')}
+    state.shadows.push(makeShadow('custom',name,sheet.look));sfx('tap');
+    sheet=null;save();render();toast('Тень появилась у края сада')},
+  edit(f){const sh=getSh(sheet.id),name=f.querySelector('#ename').value.trim(),pet=f.querySelector('#epet');
+    if(!name||(pet&&!pet.value.trim())){f.querySelector('#eerr').textContent='Имя не может быть пустым.';return}
+    sh.name=name;if(!PRESETS[sh.kind]||sh.kind==='custom')sh.line=`Я — твоя тень «${name}». Ты со мной не справишься!`;if(pet)sh.pet=pet.value.trim();
+    sheet=null;save();render();toast('Сохранено')},
+  import(f){const v=f.querySelector('#icode').value;
+    try{const s=decodeState(v);if(!s||s.v!==1||!Array.isArray(s.shadows))throw 0;
+      state=upgrade(s);checkDay();sheet=null;save();render(false);toast('Прогресс восстановлен')}
+    catch(e){f.querySelector('#ierr').textContent='Код не подошёл. Скопируй его целиком и попробуй ещё раз.'}}
 };
 
 const root=document.getElementById('app');
-root.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b||!root.contains(b))return;const fn=actions[b.dataset.action];if(fn)fn(b.dataset.arg,b,e)});
-root.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();forms[f.dataset.form]?.(f)});
+root.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b||!root.contains(b))return;
+  const r=b.getBoundingClientRect();lastPt={x:r.left+r.width/2,y:r.top+r.height/2};
+  const fn=actions[b.dataset.action];if(fn)fn(b.dataset.arg,b,e)});
+root.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();
+  const s=e.submitter||f.querySelector('[type=submit]');if(s){const r=s.getBoundingClientRect();lastPt={x:r.left+r.width/2,y:r.top+r.height/2}}
+  forms[f.dataset.form]?.(f)});
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(intro!==null)actions['intro-skip']();else if(tameShow)actions['close-tame']();else if(sheet)actions['close-sheet']();else if(enc)actions['close-enc']()});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;if(sheet&&sheet.type==='settings')render()});
 
 const NEWDAY_MSG='Новый день: погода, дела и фонари обновились';
 function boot(data){
-  state=(data&&data.state&&data.state.v===1)?data.state:load();
+  state=(data&&data.state&&data.state.v===1)?upgrade(data.state):load();
   const changed=checkDay();
   if(!state.seenIntro){intro=0;focusNext='.intro .intro-nav .btn'}
   render(false);
@@ -735,4 +906,5 @@ window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?
 })();
 </script>
 
+<script>if("serviceWorker" in navigator&&location.protocol==="https:"){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}</script>
 </html>
